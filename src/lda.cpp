@@ -40,11 +40,6 @@ int main(int argc, char ** argv) {
 	lda.estimate();
     }
     
-    if (lda.model_status == MODEL_STATUS_INF) {
-	// do inference
-	lda.inference();
-    }
-    
     return 0;
 }
 

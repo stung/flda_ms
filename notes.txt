@@ -1,0 +1,10 @@
+Corpus:
+-------
+Punctuation removed '@' symbol prematurely, replaced it so that usernames could be properly removed during analysis
+Assumed single/double letter words were unimportant
+Unable to find a way to deal with non-English words..
+
+Running the file:
+-----------------
+Make sure the first line of the corpus indicates how many lines the file has
+

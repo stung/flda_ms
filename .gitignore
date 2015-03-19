@@ -5,3 +5,5 @@ src/model.o
 src/strtokenizer.o
 src/utils.o
 src/lda
+
+test/*
