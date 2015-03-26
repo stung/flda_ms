@@ -101,54 +101,6 @@ model::~model() {
 	}
     }
 
-    // only for inference
-    if (newz) {
-	for (int m = 0; m < newM; m++) {
-	    if (newz[m]) {
-		delete newz[m];
-	    }
-	}
-    }
-    
-    if (newnw) {
-	for (int w = 0; w < newV; w++) {
-	    if (newnw[w]) {
-		delete newnw[w];
-	    }
-	}
-    }
-
-    if (newnd) {
-	for (int m = 0; m < newM; m++) {
-	    if (newnd[m]) {
-		delete newnd[m];
-	    }
-	}
-    } 
-    
-    if (newnwsum) {
-	delete newnwsum;
-    }   
-    
-    if (newndsum) {
-	delete newndsum;
-    }
-    
-    if (newtheta) {
-	for (int m = 0; m < newM; m++) {
-	    if (newtheta[m]) {
-		delete newtheta[m];
-	    }
-	}
-    }
-    
-    if (newphi) {
-	for (int k = 0; k < K; k++) {
-	    if (newphi[k]) {
-		delete newphi[k];
-	    }
-	}
-    }
 }
 
 void model::set_default_values() {
@@ -187,16 +139,6 @@ void model::set_default_values() {
     ndsum = NULL;
     theta = NULL;
     phi = NULL;
-    
-    newM = 0;
-    newV = 0;
-    newz = NULL;
-    newnw = NULL;
-    newnd = NULL;
-    newnwsum = NULL;
-    newndsum = NULL;
-    newtheta = NULL;
-    newphi = NULL;
 }
 
 int model::parse_args(int argc, char ** argv) {

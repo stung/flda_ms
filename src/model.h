@@ -83,17 +83,6 @@ public:
     double ** theta; // theta: document-topic distributions, size M x K
     double ** phi; // phi: topic-word distributions, size K x V
     
-    // for inference only
-    int inf_liter;
-    int newM;
-    int newV;
-    int ** newz;
-    int ** newnw;
-    int ** newnd;
-    int * newnwsum;
-    int * newndsum;
-    double ** newtheta;
-    double ** newphi;
     // --------------------------------------
     
     model() {
