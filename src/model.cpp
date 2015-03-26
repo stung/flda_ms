@@ -219,7 +219,6 @@ int model::init(int argc, char ** argv) {
     return 0;
 }
 
-
 int model::save_model(string model_name) {
     if (save_model_tassign(dir + model_name + tassign_suffix)) {
     return 1;
@@ -400,20 +399,20 @@ int model::init_est() {
 	
     nwsum = new int[K];
     for (k = 0; k < K; k++) {
-	nwsum[k] = 0;
+	   nwsum[k] = 0;
     }
     
     ndsum = new int[M];
     for (m = 0; m < M; m++) {
-	ndsum[m] = 0;
+	   ndsum[m] = 0;
     }
 
     srandom(time(0)); // initialize for random number generation
     z = new int*[M];
     for (m = 0; m < ptrndata->M; m++) {
-	int N = ptrndata->docs[m]->length;
-	z[m] = new int[N];
-	
+    	int N = ptrndata->docs[m]->length;
+    	z[m] = new int[N];
+    	
         // initialize for z
         for (n = 0; n < N; n++) {
     	    int topic = (int)(((double)random() / RAND_MAX) * K);
@@ -453,27 +452,27 @@ void model::estimate() {
 
     int last_iter = liter;
     for (liter = last_iter + 1; liter <= niters + last_iter; liter++) {
-	printf("Iteration %d ...\n", liter);
-	
-	// for all z_i
-	for (int m = 0; m < M; m++) {
-	    for (int n = 0; n < ptrndata->docs[m]->length; n++) {
-		// (z_i = z[m][n])
-		// sample from p(z_i|z_-i, w)
-		int topic = sampling(m, n);
-		z[m][n] = topic;
-	    }
-	}
-	
-	if (savestep > 0) {
-	    if (liter % savestep == 0) {
-		// saving the model
-		printf("Saving the model at iteration %d ...\n", liter);
-		compute_theta();
-		compute_phi();
-		save_model(utils::generate_model_name(liter));
-	    }
-	}
+    	printf("Iteration %d ...\n", liter);
+    	
+    	// for all z_i
+    	for (int m = 0; m < M; m++) {
+    	    for (int n = 0; n < ptrndata->docs[m]->length; n++) {
+        		// (z_i = z[m][n])
+        		// sample from p(z_i|z_-i, w)
+        		int topic = sampling(m, n);
+        		z[m][n] = topic;
+    	    }
+    	}
+    	
+    	if (savestep > 0) {
+    	    if (liter % savestep == 0) {
+        		// saving the model
+        		printf("Saving the model at iteration %d ...\n", liter);
+        		compute_theta();
+        		compute_phi();
+        		save_model(utils::generate_model_name(liter));
+    	    }
+    	}
     }
     
     printf("Gibbs sampling completed!\n");
@@ -497,20 +496,20 @@ int model::sampling(int m, int n) {
     double Kalpha = K * alpha;    
     // do multinomial sampling via cumulative method
     for (int k = 0; k < K; k++) {
-	p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
-		    (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
+    	p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
+    		    (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
     }
     // cumulate multinomial parameters
     for (int k = 1; k < K; k++) {
-	p[k] += p[k - 1];
+	   p[k] += p[k - 1];
     }
     // scaled sample because of unnormalized p[]
     double u = ((double)random() / RAND_MAX) * p[K - 1];
     
     for (topic = 0; topic < K; topic++) {
-	if (p[topic] > u) {
-	    break;
-	}
+    	if (p[topic] > u) {
+    	    break;
+    	}
     }
     
     // add newly estimated z_i to count variables
