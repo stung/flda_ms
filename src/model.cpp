@@ -441,13 +441,20 @@ int model::sampling(int m, int n) {
     	p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
     		    (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
     }
+
+    // Why do you add these all up? It becomes a cumulative up-to-k array
     // cumulate multinomial parameters
     for (int k = 1; k < K; k++) {
 	   p[k] += p[k - 1];
     }
+    // printf("p[K - 1] is %f\n", p[K - 1]);
+
+    // Creates a random number that's smaller than all of the numbers together
     // scaled sample because of unnormalized p[]
     double u = ((double)random() / RAND_MAX) * p[K - 1];
     
+    // The topic with the highest probability will have the largest range
+    // The random u from above will be most likely to fall under this topic
     for (topic = 0; topic < K; topic++) {
     	if (p[topic] > u) {
     	    break;
@@ -460,6 +467,7 @@ int model::sampling(int m, int n) {
     nwsum[topic] += 1;
     ndsum[m] += 1;    
     
+    // Returns topic(index) that broke on the loop above
     return topic;
 }
 

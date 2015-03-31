@@ -1,9 +1,11 @@
 .DS_Store
 
-src/dataset.o
-src/model.o
-src/strtokenizer.o
-src/utils.o
 src/lda
 
 test/*
+
+*.aux
+*.pdf
+*.log
+*.o
+*.synctex*
