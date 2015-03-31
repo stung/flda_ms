@@ -1,0 +1,108 @@
+\documentclass[a4paper]{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{fullpage}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{amssymb}
+\usepackage{float}
+
+\title{UCLA Computer Science Master's Comprehensive Exam: Implementation of Followship-LDA}
+
+\author{Spencer Tung \\ Advisor: Professor Junghoo Cho}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Abstract%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 1: Project Idea%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+Semantic analysis, the art of getting computers and programs to understand the meaning behind text, \\
+Probabilistic topic models are a \\
+Latent Dirichlet Analysis (LDA) is one such topic model, and has seen a great deal of success 
+
+\subsection{Motivation}
+I chose this project to further my understanding of semantic analysis, as well as challenge myself by implementing an algorithm that could efficiently deal with big data.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%% Section 2: Methodology and Previous Work%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Methodology and Previous Work}
+The primary source of information came from Professor John Cho's paper on FLDA \cite{flda}.  \\
+
+Given that LDA is already a well known model, there are many existing open source implementations readily available. I chose to use the gibbsLDA \verb!C++! implementation, understand the code, and use that as a baseline from which to extend and model the followship network analysis from.
+
+%%%%%%%%%%%%%%%%%%%%%%%% Section 3: System Design and Approaches%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{System Design and Approaches}
+\subsection{System Architecture Overview}
+To narrow the scope of my project, I decided to focus only on implementing a working version of the FLDA described in \\
+Having defined the scope of my project, I 
+located an implementation of  \cite{TODO}
+% \begin{figure}
+%   \centering
+%     \includegraphics[width=0.7\textwidth]{architecture}
+%   \caption {System Architecture }
+%   \label{fig:architecture}
+% \end{figure}
+% Figure \ref{fig:architecture} shows a visual overview of our system. We obtain our data from our sources, Rotten Tomatoes, Box Office Mojo, and IMDb, then store that in a number of databases. We then used the data to create a regression model on the data, and then use that model to predict the box office results based on the features of our choice.
+
+\subsection{Data Sources}
+Twitter was chosen as the microblog in question.
+
+\subsection{Data Cleaning and Challenges}
+I obtained the data from Zijun, which he described as a subset of the \\
+I worked with another student on cleaning the tweets from each individual user. I removed usernames \\
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 4: Set Up and Results%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Results}
+
+% \begin{table} [h]
+% \begin{center}
+% \begin{tabular}{ l | l | l | l | l | l }
+%   Intercept & V1 (CriticScore) & V2 (AudScore) & V3 (StarRank) & V4 (Year) & V5 (NumTheaters) \\
+%   \hline
+%   -0.20523 & 0.04814 & 0.09007 & 0.04626 & -0.07458 & 0.45317 \\
+% \end{tabular}
+% \caption{Coefficients for the opening weekend gross linear model}
+% \label{table:openlin}
+% \end{center}
+% \end{table}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 5: Evaluation and Discussion%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusions and Future Work}
+As described by Bi et al. in \cite{flda}, it is possible to implement FLDA in such a way that allows for parallelization. The implementation done by their group leveraged Spark, a framework that 
+
+
+
+As Spark comes with built in Java support, it would have required a different approach to 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 6: Teamwork%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Miscellaneous}
+\subsection{Programming Languages}
+Two programming languages were used in this project:
+\begin{enumerate}
+\item \textbf{Python}: 
+\item \textbf{C++}: 
+\end{enumerate}
+
+
+\begin{thebibliography}{9}
+\bibitem{flda}
+Bin Bi, Yuanyuan Tian, Yannis Sismanis, Andrey Balmin, and Junghoo Cho. 2014. Scalable topic-specific influence analysis on microblogs. In \textit{Proceedings of the 7th ACM international conference on Web search and data mining} (WSDM '14). ACM, New York, NY, USA, 513-522. DOI=10.1145/2556195.2556229 http://doi.acm.org/10.1145/2556195.2556229
+
+\bibitem{TODO}
+YOU NEED TO CITE ALL OF THESE SOURCES
+
+\end{thebibliography}
+
+\end{document}
