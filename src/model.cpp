@@ -401,7 +401,7 @@ void model::estimate() {
     	    for (int n = 0; n < ptrndata->docs[m]->length; n++) {
         		// (z_i = z[m][n])
         		// sample from p(z_i|z_-i, w)
-        		int topic = sampling(m, n);
+        		int topic = sampling(m, n, false);
         		z[m][n] = topic;
     	    }
     	}
@@ -425,21 +425,35 @@ void model::estimate() {
     save_model(utils::generate_model_name(-1));
 }
 
-int model::sampling(int m, int n) {
+int model::sampling(int m, int n, bool flda) {
     // remove z_i from the count variables
     int topic = z[m][n];
     int w = ptrndata->docs[m]->words[n];
-    nw[w][topic] -= 1;
-    nd[m][topic] -= 1;
-    nwsum[topic] -= 1;
-    ndsum[m] -= 1;
+    if (flda) {
+        nw[w][topic] -= 1;
+        nd[m][topic] -= 1;
+        ndsum[m] -= 1;
+    } else {
+        nw[w][topic] -= 1;
+        nd[m][topic] -= 1;
+        nwsum[topic] -= 1;
+        ndsum[m] -= 1;
+    }
 
     double Vbeta = V * beta;
     double Kalpha = K * alpha;    
     // do multinomial sampling via cumulative method
-    for (int k = 0; k < K; k++) {
-    	p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
-    		    (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
+    if (flda) {
+        // Equation 1
+        for (int k = 0; k < K; k++) {
+            p[k] = ((nd[m][k] + n_lda[m][k] + alpha) * (nw[w][k] + beta)) /
+                    (ndsum[m] + Vbeta);
+        }
+    } else {
+        for (int k = 0; k < K; k++) {
+            p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
+                    (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
+        }
     }
 
     // Why do you add these all up? It becomes a cumulative up-to-k array
@@ -462,10 +476,14 @@ int model::sampling(int m, int n) {
     }
     
     // add newly estimated z_i to count variables
-    nw[w][topic] += 1;
-    nd[m][topic] += 1;
-    nwsum[topic] += 1;
-    ndsum[m] += 1;    
+    if (flda) {
+        return 1;
+    } else {
+        nw[w][topic] += 1;
+        nd[m][topic] += 1;
+        nwsum[topic] += 1;
+        ndsum[m] += 1;    
+    }
     
     // Returns topic(index) that broke on the loop above
     return topic;

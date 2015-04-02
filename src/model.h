@@ -64,7 +64,7 @@ public:
     mapid2word id2word; // word map [int => string]
     
     // --- model parameters and variables ---    
-    int M; // dataset size (i.e., number of docs)
+    int M; // dataset size (i.e., number of users)
     int V; // vocabulary size
     int K; // number of topics
     double alpha, beta; // LDA hyperparameters 
@@ -76,12 +76,24 @@ public:
 
     double * p; // temp variable for sampling
     int ** z; // topic assignments for words, size M x doc.size()
-    int ** nw; // cwt[i][j]: number of instances of word/term i assigned to topic j, size V x K
-    int ** nd; // na[i][j]: number of words in document i assigned to topic j, size M x K
+    int ** nw; // cwt[i][j]: number of instances of word/term i assigned to topic j, over all users, size V x K
+    int ** nd; // na[i][j]: number of words in document i assigned to topic j, over all words, size M x K
     int * nwsum; // nwsum[j]: total number of words assigned to topic j, size K
     int * ndsum; // nasum[i]: total number of words in document i, size M
     double ** theta; // theta: document-topic distributions, size M x K
     double ** phi; // phi: topic-word distributions, size K x V
+
+    // --- microblog network variables ---
+    // Documents are replaced by users in FLDA!
+    int ** n_lda; // d_z, m, *, *: number of words in user m's document assigned to topic z, for all links, for any reason, size M x K
+    int ** A; // c_x, m, *: topic x assigned to user m
+    int ** B; // d_x, m, *, *: 
+    int * C0; // d_*, m, *, 0: size M
+    int * C1; // d_*, m, *, 1: size M
+    int * D0; // d_*, *, e, 0: 
+    int Dsum; // d_*, *, *, 0:
+    int ** D1; // d_x, *, e, 1:
+    int * D1sum; // d_x, *, *, 1:
     
     // --------------------------------------
     
@@ -117,7 +129,7 @@ public:
 	
     // estimate LDA model using Gibbs sampling
     void estimate();
-    int sampling(int m, int n);
+    int sampling(int m, int n, bool flda);
     void compute_theta();
     void compute_phi();
 };
