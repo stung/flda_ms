@@ -39,7 +39,7 @@ except ImportError:
 
 # Gunzips and parses one XML Twitter user tweet file
 # Returns one line with all of the tweets
-def gzParse(xmlPath):
+def gzParseTweets(xmlPath):
   # reads gzip file
   xmlFile = gzip.open(xmlPath)
   fileContent = xmlFile.read()
@@ -62,6 +62,21 @@ def gzParse(xmlPath):
     tweet = cleanTweet(rawTweet[userIdx + 1:])
     tweets += " " + tweet
   return user, tweets
+
+# Gunzips and parses one XML Twitter user follower file
+# Returns list of all the user IDs that the current user is following
+def gzParseFollowers(xmlPath):
+  # reads gzip file
+  xmlFile = gzip.open(xmlPath)
+  fileContent = xmlFile.read()
+
+  # Converting contents into an XML Element Tree
+  root = ET.fromstring(fileContent)
+  userids = ""
+
+  for uid in root.iter('id'):
+    userids += " " + uid.text
+  return userids
 
 def cleanTweet(dirtyTweet):
   # Lowercase all of tweet
@@ -97,17 +112,25 @@ def cleanTweet(dirtyTweet):
 # Collecting all of the friends and tweets in each run
 corpus = []
 users = []
+followers = []
+
 for root, dirs, files in os.walk('1'):
   for name in files:
     if 'tweets.rss.gz' in name:
       filePath = os.path.join(root, name)
 
       # reads gzipped xml files and extracts tweets
-      user, tweets = gzParse(filePath)
+      user, tweets = gzParseTweets(filePath)
       if user is not None:
-        users.append(user)
+        userIDPair = user + ":" + filePath.split('/')[-2]
+        users.append(userIDPair)
         corpus.append(tweets)
 
+    if 'friends.rss.gz' in name:
+      filePath = os.path.join(root, name)
+
+      followerList = gzParseFollowers(filePath)
+      followers.append(followerList)
 
 # Writing the corpus into a file
 corpusFile = open('corpus.txt', 'w')
@@ -122,3 +145,10 @@ corpusFile.close()
 usersString = '\n'.join(users)
 with open('users.txt', 'w') as usersFile:
   usersFile.write(usersString)
+usersFile.close()
+
+# Writing the follower list into a file
+followerFile = open('follower.txt', 'w')
+followerString = '\n'.join(followers)
+followerFile.write(followerString)
+followerFile.close()
