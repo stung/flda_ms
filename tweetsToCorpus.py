@@ -113,6 +113,7 @@ def cleanTweet(dirtyTweet):
 corpus = []
 users = []
 followers = []
+skipUsers = []
 
 for root, dirs, files in os.walk('1'):
   for name in files:
@@ -121,10 +122,11 @@ for root, dirs, files in os.walk('1'):
 
       # reads gzipped xml files and extracts tweets
       user, tweets = gzParseTweets(filePath)
-      if user is not None:
-        userIDPair = user + ":" + filePath.split('/')[-2]
-        users.append(userIDPair)
-        corpus.append(tweets)
+      if user is None:
+        user = "N/A"
+      userIDPair = user + ":" + filePath.split('/')[-2]
+      users.append(userIDPair)
+      corpus.append(tweets)
 
     if 'friends.rss.gz' in name:
       filePath = os.path.join(root, name)
@@ -148,7 +150,7 @@ with open('users.txt', 'w') as usersFile:
 usersFile.close()
 
 # Writing the follower list into a file
-followerFile = open('follower.txt', 'w')
+followerFile = open('followers.txt', 'w')
 followerString = '\n'.join(followers)
 followerFile.write(followerString)
 followerFile.close()
