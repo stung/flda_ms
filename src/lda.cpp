@@ -35,9 +35,12 @@ int main(int argc, char ** argv) {
     	return 1;
     }
     
-    if (lda.model_status == MODEL_STATUS_EST || lda.model_status == MODEL_STATUS_EST_FLDA) {
+    if (lda.model_status == MODEL_STATUS_EST) {
     	// parameter estimation
     	lda.estimate();
+    } else if (lda.model_status == MODEL_STATUS_EST_FLDA) {
+        // parameter estimation
+        lda.estimate_flda();
     }
     
     return 0;

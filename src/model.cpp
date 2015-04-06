@@ -374,8 +374,6 @@ int model::init_est() {
         } 
         // total number of words in document i
         ndsum[m] = N;      
-
-
     }
     
     theta = new double*[M];
@@ -463,8 +461,6 @@ int model::init_est_flda() {
         } 
         // total number of words in document i
         ndsum[m] = N;      
-
-
     }
     
     theta = new double*[M];
@@ -482,8 +478,8 @@ int model::init_est_flda() {
 
 void model::estimate() {
     if (twords > 0) {
-	// print out top words per topic
-	dataset::read_wordmap(dir + wordmapfile, &id2word);
+    	// print out top words per topic
+    	dataset::read_wordmap(dir + wordmapfile, &id2word);
     }
 
     printf("Sampling %d iterations!\n", niters);
@@ -498,7 +494,7 @@ void model::estimate() {
     	    for (int n = 0; n < ptrndata->docs[m]->length; n++) {
         		// (z_i = z[m][n])
         		// sample from p(z_i|z_-i, w)
-        		int topic = lda_sampling(m, n, false);
+        		int topic = sampling(m, n);
         		z[m][n] = topic;
     	    }
 
@@ -526,35 +522,67 @@ void model::estimate() {
     save_model(utils::generate_model_name(-1));
 }
 
-int model::lda_sampling(int m, int n, bool flda) {
+void model::estimate_flda() {
+    if (twords > 0) {
+        // print out top words per topic
+        dataset::read_wordmap(dir + wordmapfile, &id2word);
+    }
+
+    printf("Sampling %d iterations!\n", niters);
+
+    int last_iter = liter;
+    for (liter = last_iter + 1; liter <= niters + last_iter; liter++) {
+        printf("Iteration %d ...\n", liter);
+        
+        // for all z_i
+        for (int m = 0; m < M; m++) {
+            // LDA portion of sampling
+            for (int n = 0; n < ptrndata->docs[m]->length; n++) {
+                // (z_i = z[m][n])
+                // sample from p(z_i|z_-i, w)
+                int topic = sampling(m, n);
+                z[m][n] = topic;
+            }
+
+            // FLDA portion of network analysis
+            // for () {
+            // }
+        }
+        
+        if (savestep > 0) {
+            if (liter % savestep == 0) {
+                // saving the model
+                printf("Saving the model at iteration %d ...\n", liter);
+                compute_theta();
+                compute_phi();
+                save_model(utils::generate_model_name(liter));
+            }
+        }
+    }
+    
+    printf("Gibbs sampling completed!\n");
+    printf("Saving the final model!\n");
+    compute_theta();
+    compute_phi();
+    liter--;
+    save_model(utils::generate_model_name(-1));
+}
+
+int model::sampling(int m, int n) {
     // remove z_i from the count variables
     int topic = z[m][n];
     int w = ptrndata->docs[m]->words[n];
-    if (flda) {
-        nw[w][topic] -= 1;
-        nd[m][topic] -= 1;
-        ndsum[m] -= 1;
-    } else {
-        nw[w][topic] -= 1;
-        nd[m][topic] -= 1;
-        nwsum[topic] -= 1;
-        ndsum[m] -= 1;
-    }
+    nw[w][topic] -= 1;
+    nd[m][topic] -= 1;
+    nwsum[topic] -= 1;
+    ndsum[m] -= 1;
 
     double Vbeta = V * beta;
     double Kalpha = K * alpha;    
     // do multinomial sampling via cumulative method
-    if (flda) {
-        // Equation 1
-        for (int k = 0; k < K; k++) {
-            p[k] = ((nd[m][k] + n_lda[m][k] + alpha) * (nw[w][k] + beta)) /
-                    (ndsum[m] + Vbeta);
-        }
-    } else {
-        for (int k = 0; k < K; k++) {
-            p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
-                    (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
-        }
+    for (int k = 0; k < K; k++) {
+        p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
+                (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
     }
 
     // Why do you add these all up? It becomes a cumulative up-to-k array
@@ -562,7 +590,6 @@ int model::lda_sampling(int m, int n, bool flda) {
     for (int k = 1; k < K; k++) {
 	   p[k] += p[k - 1];
     }
-    // printf("p[K - 1] is %f\n", p[K - 1]);
 
     // Creates a random number that's smaller than all of the numbers together
     // scaled sample because of unnormalized p[]
@@ -577,21 +604,63 @@ int model::lda_sampling(int m, int n, bool flda) {
     }
     
     // add newly estimated z_i to count variables
-    if (flda) {
-        return 1;
-    } else {
-        nw[w][topic] += 1;
-        nd[m][topic] += 1;
-        nwsum[topic] += 1;
-        ndsum[m] += 1;    
-    }
+    nw[w][topic] += 1;
+    nd[m][topic] += 1;
+    nwsum[topic] += 1;
+    ndsum[m] += 1;    
     
     // Returns topic(index) that broke on the loop above
     return topic;
 }
 
-int model::flda_sampling(int m, int l) {
-    return 0;
+int model::sampling_flda(int m, int l) {
+    // remove z_i from the count variables
+    int topic = z[m][l];
+    int w = ptrndata->docs[m]->words[l];
+    nw[w][topic] -= 1;
+    nd[m][topic] -= 1;
+    ndsum[m] -= 1;
+
+    double Vbeta = V * beta;
+    double Kalpha = K * alpha;    
+    // do multinomial sampling via cumulative method
+
+    // Equation 1
+    for (int k = 0; k < K; k++) {
+        p[k] = ((nd[m][k] + n_lda[m][k] + alpha) * (nw[w][k] + beta)) /
+                (ndsum[m] + Vbeta);
+    }
+
+    // Why do you add these all up? It becomes a cumulative up-to-k array
+    // cumulate multinomial parameters
+    for (int k = 1; k < K; k++) {
+       p[k] += p[k - 1];
+    }
+
+    // Creates a random number that's smaller than all of the numbers together
+    // scaled sample because of unnormalized p[]
+    double u = ((double)random() / RAND_MAX) * p[K - 1];
+    
+    // The topic with the highest probability will have the largest range
+    // The random u from above will be most likely to fall under this topic
+    for (topic = 0; topic < K; topic++) {
+        if (p[topic] > u) {
+            break;
+        }
+    }
+    
+    // add newly estimated z_i to count variables
+    // if (flda) {
+    //     return 1;
+    // } else {
+    //     nw[w][topic] += 1;
+    //     nd[m][topic] += 1;
+    //     nwsum[topic] += 1;
+    //     ndsum[m] += 1;    
+    // }
+    
+    // Returns topic(index) that broke on the loop above
+    return topic;
 }
 
 void model::compute_theta() {

@@ -132,8 +132,9 @@ public:
 	
     // estimate LDA model using Gibbs sampling
     void estimate();
-    int lda_sampling(int m, int n, bool flda);
-    int flda_sampling(int m, int l);
+    void estimate_flda();
+    int sampling(int m, int n);
+    int sampling_flda(int m, int l);
     void compute_theta();
     void compute_phi();
 };
