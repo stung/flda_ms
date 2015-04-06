@@ -397,16 +397,18 @@ int model::init_est_flda() {
     // + read training data
     ptrndata = new dataset;
     if (ptrndata->read_trndata(dir + dfile, dir + wordmapfile)) {
-        printf("Fail to read training data!\n");
+        printf("Fail to read tweet training data!\n");
         return 1;
     }
 
     // read friend network data
     pfrnddata = new dataset;
-    if (pfrnddata->read_frnddata(dir + dfile, dir + friendmapfile)) {
-        printf("Fail to read training data!\n");
+    if (pfrnddata->read_frnddata(dir + ffile, dir + friendmapfile)) {
+        printf("Fail to read friend training data!\n");
         return 1;
     }
+
+    printf("Friend data success read?");
 
     // + allocate memory and assign values for variables
     M = ptrndata->M;
@@ -537,7 +539,7 @@ void model::estimate_flda() {
         // for all z_i
         for (int m = 0; m < M; m++) {
             // LDA portion of sampling
-            for (int n = 0; n < ptrndata->docs[m]->length; n++) {
+            for (int n = 0; n < pfrnddata->docs[m]->length; n++) {
                 // (z_i = z[m][n])
                 // sample from p(z_i|z_-i, w)
                 int topic = sampling(m, n);

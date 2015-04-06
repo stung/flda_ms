@@ -183,6 +183,7 @@ int utils::parse_args(int argc, char ** argv, model * pmodel) {
 		}
 		
 		pmodel->dfile = dfile;
+		pmodel->ffile = ffile;
 		
 		string::size_type idx = dfile.find_last_of("/");			
 		if (idx == string::npos) {

@@ -52,6 +52,7 @@ public:
 
     string dir;			// model directory
     string dfile;		// data file    
+    string ffile;       // data file    
     string model_name;		// model name
     int model_status;		// model status:
 				// MODEL_STATUS_UNKNOWN: unknown status
