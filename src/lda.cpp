@@ -31,13 +31,13 @@ int main(int argc, char ** argv) {
     model lda;
 
     if (lda.init(argc, argv)) {
-	show_help();
-	return 1;
+    	show_help();
+    	return 1;
     }
     
-    if (lda.model_status == MODEL_STATUS_EST || lda.model_status == MODEL_STATUS_ESTC) {
-	// parameter estimation
-	lda.estimate();
+    if (lda.model_status == MODEL_STATUS_EST || lda.model_status == MODEL_STATUS_EST_FLDA) {
+    	// parameter estimation
+    	lda.estimate();
     }
     
     return 0;
@@ -46,6 +46,7 @@ int main(int argc, char ** argv) {
 void show_help() {
     printf("Command line usage:\n");
     printf("\tlda -est -alpha <double> -beta <double> -ntopics <int> -niters <int> -savestep <int> -twords <int> -dfile <string>\n");
+    printf("\tlda -est_flda -alpha <double> -beta <double> -ntopics <int> -niters <int> -savestep <int> -twords <int> -dfile <string> -ffile <string>\n");
     // printf("\tlda -estc -dir <string> -model <string> -niters <int> -savestep <int> -twords <int>\n");
     // printf("\tlda -inf -dir <string> -model <string> -niters <int> -twords <int> -dfile <string>\n");
     // printf("\tlda -inf -dir <string> -model <string> -niters <int> -twords <int> -dfile <string> -withrawdata\n");

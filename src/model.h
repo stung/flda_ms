@@ -42,6 +42,7 @@ class model {
 public:
     // fixed options
     string wordmapfile;		// file that contains word map [string -> integer id]
+    string friendmapfile;     // file that contains word map [string -> integer id]
     string trainlogfile;	// training log file
     string tassign_suffix;	// suffix for topic assignment file
     string theta_suffix;	// suffix for theta file
@@ -58,13 +59,14 @@ public:
 				// MODEL_STATUS_ESTC: continue to estimate the model from a previous one
 				// MODEL_STATUS_INF: do inference
 
-    dataset * ptrndata;	// pointer to training dataset object
+    dataset * ptrndata;	// pointer to corpus/tweets training dataset object
+    dataset * pfrnddata; // pointer to friend training dataset object
     dataset * pnewdata; // pointer to new dataset object
 
     mapid2word id2word; // word map [int => string]
     
     // --- model parameters and variables ---    
-    int M; // dataset size (i.e., number of users)
+    int M; // dataset size (i.e., number of user documents)
     int V; // vocabulary size
     int K; // number of topics
     double alpha, beta; // LDA hyperparameters 
@@ -129,7 +131,8 @@ public:
 	
     // estimate LDA model using Gibbs sampling
     void estimate();
-    int sampling(int m, int n, bool flda);
+    int lda_sampling(int m, int n, bool flda);
+    int flda_sampling(int m, int l);
     void compute_theta();
     void compute_phi();
 };

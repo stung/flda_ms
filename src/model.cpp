@@ -315,7 +315,14 @@ int model::init_est() {
         printf("Fail to read training data!\n");
         return 1;
     }
-		
+
+    // read friend network data
+    pfrnddata = new dataset;
+    if (pfrnddata->read_frnddata(dir + dfile, dir + friendmapfile)) {
+        printf("Fail to read training data!\n");
+        return 1;
+    }
+
     // + allocate memory and assign values for variables
     M = ptrndata->M;
     V = ptrndata->V;
@@ -369,6 +376,8 @@ int model::init_est() {
         } 
         // total number of words in document i
         ndsum[m] = N;      
+
+
     }
     
     theta = new double*[M];
@@ -398,12 +407,17 @@ void model::estimate() {
     	
     	// for all z_i
     	for (int m = 0; m < M; m++) {
+            // LDA portion of sampling
     	    for (int n = 0; n < ptrndata->docs[m]->length; n++) {
         		// (z_i = z[m][n])
         		// sample from p(z_i|z_-i, w)
-        		int topic = sampling(m, n, false);
+        		int topic = lda_sampling(m, n, false);
         		z[m][n] = topic;
     	    }
+
+            // FLDA portion of network analysis
+            // for () {
+            // }
     	}
     	
     	if (savestep > 0) {
@@ -425,7 +439,7 @@ void model::estimate() {
     save_model(utils::generate_model_name(-1));
 }
 
-int model::sampling(int m, int n, bool flda) {
+int model::lda_sampling(int m, int n, bool flda) {
     // remove z_i from the count variables
     int topic = z[m][n];
     int w = ptrndata->docs[m]->words[n];
@@ -487,6 +501,10 @@ int model::sampling(int m, int n, bool flda) {
     
     // Returns topic(index) that broke on the loop above
     return topic;
+}
+
+int model::flda_sampling(int m, int l) {
+    return 0;
 }
 
 void model::compute_theta() {
