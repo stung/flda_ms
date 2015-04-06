@@ -105,6 +105,7 @@ model::~model() {
 
 void model::set_default_values() {
     wordmapfile = "wordmap.txt";
+    friendmapfile = "friendmap.txt";
     trainlogfile = "trainlog.txt";
     tassign_suffix = ".tassign";
     theta_suffix = ".theta";
@@ -148,14 +149,18 @@ int model::parse_args(int argc, char ** argv) {
 int model::init(int argc, char ** argv) {
     // call parse_args
     if (parse_args(argc, argv)) {
-	return 1;
+    	return 1;
     }
     
     if (model_status == MODEL_STATUS_EST) {
 	// estimating the model from scratch
-	if (init_est()) {
-	    return 1;
-	}
+    	if (init_est()) {
+    	    return 1;
+    	}
+    } else if (model_status == MODEL_STATUS_EST_FLDA) {
+        if (init_est_flda()) {
+            return 1;
+        }
     }
     
     return 0;
@@ -316,13 +321,6 @@ int model::init_est() {
         return 1;
     }
 
-    // read friend network data
-    pfrnddata = new dataset;
-    if (pfrnddata->read_frnddata(dir + dfile, dir + friendmapfile)) {
-        printf("Fail to read training data!\n");
-        return 1;
-    }
-
     // + allocate memory and assign values for variables
     M = ptrndata->M;
     V = ptrndata->V;
@@ -385,6 +383,95 @@ int model::init_est() {
         theta[m] = new double[K];
     }
 	
+    phi = new double*[K];
+    for (k = 0; k < K; k++) {
+        phi[k] = new double[V];
+    }    
+    
+    return 0;
+}
+
+int model::init_est_flda() {
+    int m, n, w, k;
+
+    p = new double[K];
+
+    // + read training data
+    ptrndata = new dataset;
+    if (ptrndata->read_trndata(dir + dfile, dir + wordmapfile)) {
+        printf("Fail to read training data!\n");
+        return 1;
+    }
+
+    // read friend network data
+    pfrnddata = new dataset;
+    if (pfrnddata->read_frnddata(dir + dfile, dir + friendmapfile)) {
+        printf("Fail to read training data!\n");
+        return 1;
+    }
+
+    // + allocate memory and assign values for variables
+    M = ptrndata->M;
+    V = ptrndata->V;
+    // K: from command line or default value
+    // alpha, beta: from command line or default values
+    // niters, savestep: from command line or default values
+
+    nw = new int*[V];
+    for (w = 0; w < V; w++) {
+        nw[w] = new int[K];
+        for (k = 0; k < K; k++) {
+            nw[w][k] = 0;
+        }
+    }
+    
+    nd = new int*[M];
+    for (m = 0; m < M; m++) {
+        nd[m] = new int[K];
+        for (k = 0; k < K; k++) {
+            nd[m][k] = 0;
+        }
+    }
+    
+    nwsum = new int[K];
+    for (k = 0; k < K; k++) {
+       nwsum[k] = 0;
+    }
+    
+    ndsum = new int[M];
+    for (m = 0; m < M; m++) {
+       ndsum[m] = 0;
+    }
+
+    srandom(time(0)); // initialize for random number generation
+    z = new int*[M];
+    for (m = 0; m < ptrndata->M; m++) {
+        int N = ptrndata->docs[m]->length;
+        z[m] = new int[N];
+        
+        // initialize for z
+        for (n = 0; n < N; n++) {
+            int topic = (int)(((double)random() / RAND_MAX) * K);
+            z[m][n] = topic;
+            
+            // number of instances of word i assigned to topic j
+            nw[ptrndata->docs[m]->words[n]][topic] += 1;
+            // number of words in document i assigned to topic j
+            nd[m][topic] += 1;
+            // total number of words assigned to topic j
+            nwsum[topic] += 1;
+        } 
+        // total number of words in document i
+        ndsum[m] = N;      
+
+
+    }
+    
+    theta = new double*[M];
+    for (m = 0; m < M; m++) {
+        theta[m] = new double[K];
+    }
+    
     phi = new double*[K];
     for (k = 0; k < K; k++) {
         phi[k] = new double[V];

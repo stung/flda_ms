@@ -42,7 +42,7 @@ class model {
 public:
     // fixed options
     string wordmapfile;		// file that contains word map [string -> integer id]
-    string friendmapfile;     // file that contains word map [string -> integer id]
+    string friendmapfile;   // file that contains friend map [string -> integer id]
     string trainlogfile;	// training log file
     string tassign_suffix;	// suffix for topic assignment file
     string theta_suffix;	// suffix for theta file
@@ -56,8 +56,7 @@ public:
     int model_status;		// model status:
 				// MODEL_STATUS_UNKNOWN: unknown status
 				// MODEL_STATUS_EST: estimating from scratch
-				// MODEL_STATUS_ESTC: continue to estimate the model from a previous one
-				// MODEL_STATUS_INF: do inference
+				// MODEL_STATUS_EST_LDA: estimating from scratch, for the FLDA model
 
     dataset * ptrndata;	// pointer to corpus/tweets training dataset object
     dataset * pfrnddata; // pointer to friend training dataset object
@@ -128,6 +127,8 @@ public:
     
     // init for estimation
     int init_est();
+    // init for FLDA estimation
+    int init_est_flda();
 	
     // estimate LDA model using Gibbs sampling
     void estimate();

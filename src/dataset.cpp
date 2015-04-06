@@ -117,7 +117,7 @@ int dataset::read_trndata(string dfile, string wordmapfile) {
     
     FILE * fin = fopen(dfile.c_str(), "r");
     if (!fin) {
-		printf("Cannot open file %s to read!\n", dfile.c_str());
+		printf("Cannot open corpus file %s to read!\n", dfile.c_str());
 		return 1;
     }   
     
@@ -188,12 +188,12 @@ int dataset::read_trndata(string dfile, string wordmapfile) {
     return 0;
 }
 
-int dataset::read_frnddata(string dfile, string usermapfile) {
+int dataset::read_frnddata(string dfile, string friendmapfile) {
 	mapword2id word2id;
     
     FILE * fin = fopen(dfile.c_str(), "r");
     if (!fin) {
-		printf("Cannot open file %s to read!\n", dfile.c_str());
+		printf("Cannot open friend file %s to read!\n", dfile.c_str());
 		return 1;
     }   
     
@@ -254,7 +254,7 @@ int dataset::read_frnddata(string dfile, string usermapfile) {
     fclose(fin);
     
     // write word map to file
-    if (write_wordmap(usermapfile, &word2id)) {
+    if (write_wordmap(friendmapfile, &word2id)) {
 		return 1;
     }
     
