@@ -1,0 +1,6 @@
+Current:
+    running both readtrndata and readfrnddata
+    M is being overwritten
+    See if we need to add in another var for L and ??
+    - An analagous V?
+
