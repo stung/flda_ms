@@ -54,6 +54,7 @@ The paper will be organized as follows. Section \ref{sec:prevwork} will discuss 
 % \subsection{Motivation}
 % I chose this project to further my understanding of semantic analysis, as well as challenge myself by implementing an algorithm that could efficiently deal with big data.
 
+
 %%%%%%%%%%%%%%%%%%%%%%%% Section 2: Methodology and Previous Work%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Background and Previous Work}
 \label{sec:prevwork}
@@ -103,13 +104,24 @@ Table \ref{tab:ldavars} lists out the aforementioned variables for easy referenc
     $\theta^{(d)}$ & Simplified representation of $P(z)$, for document $d$ \\
     $w_i$ & $i$th word in a document \\
     $T$ & Number of topics, manually chosen \\
+    $D$ & Number of documents in the corpus \\
+    $N_d$ & Number of words in document $d$ \\
+    $N$ & Number of words in the corpus \\
     \hline
   \end{tabular}
   \caption{Quick reference for notation and variables used in LDA}
   \label{tab:ldavars}
 \end{table}
 
-asdfadfasfd
+This 
+
+\begin{figure}
+  \centering
+    \includegraphics[width=0.7\textwidth]{topicmodel}
+  \caption {Topic model ASDFASDFADSFASDFASDFADSF}
+  \label{fig:topicmodel}
+\end{figure}
+Figure \ref{fig:topicmodel} shows a visual overview of our system. 
 
 \begin{equation}
   P(w_i) = \sum\limits_{j=1}^T P(w_i | z_i = j) P(z_i = j)
@@ -130,7 +142,8 @@ The Gibbs sampling equations for FLDA have also been tweaked to
 \begin{equation}\label{eq:flda_sem}
   \begin{gathered}
     p(z_{m, n} | z_{-(m, n)}, x, w, e, y, \alpha, \beta, \gamma, \epsilon, \rho) \propto \\
-      \frac{(c_{z_{m, n}, m, *}^{-(m, n)} + d_{z_{m, n}, m, *, *} + \alpha_{z_{m, n}}) (c_{z_{m, n}, *, w_{m, n}}^{-(m, n)} + \beta_{w_{m, n}})}
+      \frac{(c_{z_{m, n}, m, *}^{-(m, n)} + d_{z_{m, n}, m, *, *} + \alpha_{z_{m, n}})
+      (c_{z_{m, n}, *, w_{m, n}}^{-(m, n)} + \beta_{w_{m, n}})}
       {c_{z_{m, n}, *, *}^{-(m, n)} + \sum^W_{i = 1}\beta_i}
   \end{gathered}
 \end{equation}
@@ -155,6 +168,7 @@ The Gibbs sampling equations for FLDA have also been tweaked to
 
 blah blah Equation \ref{eq:flda_sem}
 
+
 %%%%%%%%%%%%%%%%%%%%%%%% Section 3: System Design and Approaches%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{System Design and Approaches}
 \label{sec:approach}
@@ -166,13 +180,6 @@ To narrow the scope of my project, I decided to focus only on implementing a wor
 Having defined the scope of my project, I located an implementation of  \cite{gibbs_lda}
 
 To represent the 3D and 4D matrices $c_{z, m, w}$ and $d_{x, m, e, y}$ respectively, multiple 1D and 2D arrays were used. These arrays aggregate the entries in the unrepresented dimension(s), thereby reducing the dimensions of a very large matrix. This greatly increases the speed at which the algorithm can run, though at the obvious cost of requiring more space to store redundant information.
-% \begin{figure}
-%   \centering
-%     \includegraphics[width=0.7\textwidth]{architecture}
-%   \caption {System Architecture }
-%   \label{fig:architecture}
-% \end{figure}
-% Figure \ref{fig:architecture} shows a visual overview of our system. We obtain our data from our sources, Rotten Tomatoes, Box Office Mojo, and IMDb, then store that in a number of databases. We then used the data to create a regression model on the data, and then use that model to predict the box office results based on the features of our choice.
 
 \subsection{Data Sources}
 Twitter was chosen as the microblog in question.
