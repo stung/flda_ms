@@ -15,8 +15,11 @@
 \usepackage{geometry}
  \geometry{
  a4paper,
- left=15mm,
- right=15mm,
+ left=20mm,
+ right=20mm,
+ % For multicol
+ % left=15mm,
+ % right=15mm, 
  top=20mm,
  bottom=20mm,
  }
@@ -29,8 +32,8 @@
 
 \begin{document}
 \maketitle
+% \begin{multicols}{2}
 
-\begin{multicols}{2}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Abstract%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 asdf
@@ -44,27 +47,113 @@ These days, there is a large amount of traffic centered around social media, whi
 
 However, there are some advertisers who, instead of taking the time to do their own research and fine tune their efforts, will resort to more widespread methods to attract followers. This will often take the form of a computer scipt that blasts their advertisements to anyone who follows them. Known as \textit{Twitterbots}, or spambots to most, these drones are often viewed as being annoyances to legitimate users who may not care for the bot tweets. It is therefore advantageous to be able to automatically identify whether a user is legitimate or a bot and take appropriate measures accordingly.
 
-This paper will focus on an extension of \textit{Latent Dirichlet Analysis} (LDA). LDA is a probabilistic topic model, and can be applied to a set of documents (known as a \textit{corpus}) to extract topic information for each document and every word in a given corpus. The extension of this model, known as \textit{Followship-LDA} (FLDA), leverages Twitter follower-followee network information to identify either important and influential entities on Twitter, or spambots that most people won't pay attention to and should remove from their followee list. The details of both models will be discussed in section \ref{sec:prevwork}.
+This paper will focus on an extension of \textit{Latent Dirichlet Analysis} (LDA). LDA is a probabilistic topic model, and can be applied to a set of documents (known as a \textit{corpus}) to extract topic information for each document and every word in a given corpus. The extension of this model, known as \textit{Followship-LDA} (FLDA), leverages Twitter follower-followee network information to identify either important and influential entities on Twitter, or spambots that most people won't pay attention to and should remove from their followee list. The details of both models will be discussed in Section \ref{sec:prevwork}.
 
-The paper will be organized as follows. Section \ref{sec:prevwork} will discuss any previous work that came before this paper. Most importantly, it details the FLDA method critical to algorithm's success. Section \ref{sec:approach} will discuss the system architecture and design. Section \ref{sec:results} will detail the results of running the FLDA model on the Twitter data subset. Finally, section \ref{sec:conc} will discuss the conclusions.
+The paper will be organized as follows. Section \ref{sec:prevwork} will discuss any previous work that came before this paper. Most importantly, it details the FLDA method critical to algorithm's success. Section \ref{sec:approach} will discuss the system architecture and design. Section \ref{sec:results} will detail the results of running the FLDA model on the Twitter data subset. Finally, Section \ref{sec:conc} will discuss the conclusions.
 
-\subsection{Motivation}
-I chose this project to further my understanding of semantic analysis, as well as challenge myself by implementing an algorithm that could efficiently deal with big data.
-
+% \subsection{Motivation}
+% I chose this project to further my understanding of semantic analysis, as well as challenge myself by implementing an algorithm that could efficiently deal with big data.
 
 %%%%%%%%%%%%%%%%%%%%%%%% Section 2: Methodology and Previous Work%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Methodology and Previous Work}
+\section{Background and Previous Work}
 \label{sec:prevwork}
-\subsection{Background}
-One approach to deriving meaning behind the text is through topic models. These are models that operate under the following assumptions: that a document is a mixture of different topics, and each topic is a distribution of words. As these are \textit{generative models} for documents, it demonstrates a probabilistic procedure that can be used to generate various documents. Using statistical techniques, it is possible to invert this process and infer the set of topics that were used to generate the document in question. 
+\subsection{Background Overview}
+To understand how FLDA works, it is necessary to first gain an understanding of how LDA works. As mentioned previously, LDA is a type of probabilistic topic model, which is one approach for semantic analysis. These are models that operate under the following assumptions: that a document is a mixture of different topics, and each topic is a distribution of words. As these are \textit{generative models} for documents, it demonstrates a probabilistic procedure that can be used to generate various documents. Table \ref{tab:ldatopics} shows two example topics, ranked by top 4 words that have a high probability of belonging to that topic. Note that although neither topic is labeled, it is clear to see that Topic 1 most likely has to do with fictional works, whereas Topic 2 revolves around plants and nature. To generate documents from these topics, one simply assigns a probability to each topic and selects words based on the probability distribution of the words in the topics \cite{lda}. In this example, by assigning an equal probability to both topics in this table, one could generate a document that talked about the fictional story of a tree who wanted a bee to come along and pollinate his flowers.
 
-To understand how FLDA works, it is necessary to first gain an understanding of how LDA works. As mentioned previously, LDA is a method to statistically 
-\cite{lda}. 
+\begin{table}[h]
+  \centering % used for centering table
+  \begin{tabular}{ |l|l|l|l|l| }
+    \cline{0-1}
+    \cline{4-5}
+    \multicolumn{2}{|l|}{\textbf{Topic 1}} & & \multicolumn{2}{|l|}{\textbf{Topic 2}} \\
+    \cline{0-1}
+    \cline{4-5}
+    word & prob & & word & prob \\
+    \cline{0-1}
+    \cline{4-5}
+    BOOK & 0.06 & & TREE & 0.04 \\
+    NOVEL & 0.04 & & FLOWERS & 0.03 \\
+    STORY & 0.03 & & POLLEN & 0.03 \\
+    HARDCOVER & 0.01 & & FRUIT & 0.02 \\
+    \cline{0-1}
+    \cline{4-5}
+  \end{tabular}
+  \caption{Two inferred topics as a result of running LDA on a given corpus. These topic probabilities can also in turn be used to generate documents by selecting words from each topic.}
+  \label{tab:ldatopics}
+\end{table}
 
-\subsection{Previous Work}
+Using statistical techniques, it is possible to invert this process and infer the set of topics that were used to generate the documents in question. That is, given a set of documents, one could return a list of topics, each with their own probability distribution of likely words. This is the process known as LDA.
+
+\subsection{LDA}
+To start, we need to define some variables and equations. $P(z)$ is the probability distribution of topics $z$ over a given document - an example of this would be the equal document we generated previously. There, both topics 1 and 2 had a $50\%$ probability of showing up in the document. $P(w | z)$ is the probability of word $w$ being chosen, given topic $z$. This would be represented by the probabilities listed in Table \ref{tab:ldatopics}. More common or otherwise prominent words for a topic $z$ are given higher weights that the less used ones. A document can therefore be generated, word by word, by first selecting a topic from the distribution of topics, and then sampling a word $w_i$ from the topic-word distribution $P(w | z)$. We represent these two actions with $P(z_i = j)$, which is the probability that for the $i$th word token in a given document, the $j$th topic was selected, and $P(w_i | z_i = j)$, which is the probability of word $w_i$ in topic $j$'s word distribution. We can simplify the notation using $\phi^{(j)}$ to represent the distribution of the words for topic $j$, and $\theta^{(d)}$ to represent the distribution of topics for document $d$. Finally, given that we are inferring these document-topic and topic-word distributions with no prior information about the corpus (ie. the set of documents), we must select a total number of topics $T$ for our inference. The total number of documents in our corpus is $D$, where each document $d$ consists of $N_d$ words, and the total number of words is $N$, where $N = \sum\limits^D{N_d}$ \cite{lda}. 
+
+Table \ref{tab:ldavars} lists out the aforementioned variables for easy reference.
+\begin{table}[h]
+  \centering % used for centering table
+  \begin{tabular}{ |l|l| }
+    \hline
+    Notation & Description \\
+    \hline
+    \hline
+    $P(z)$ & Distribution of topics $z$ over a given document \\
+    $P(w | z)$ & Distribution of words $w$ over a given topic $z$ \\
+    $P(z_i = j)$ & Probability that topic $j$ was sampled for the $i$th word \\
+    $P(w_i | z_i = j)$ & Probability of word $w_i$ for topic $j$ \\
+    $\phi^{(j)}$ & Simplified representation of $P(w | z = j)$, for topic $j$ \\
+    $\theta^{(d)}$ & Simplified representation of $P(z)$, for document $d$ \\
+    $w_i$ & $i$th word in a document \\
+    $T$ & Number of topics, manually chosen \\
+    \hline
+  \end{tabular}
+  \caption{Quick reference for notation and variables used in LDA}
+  \label{tab:ldavars}
+\end{table}
+
+asdfadfasfd
+
+\begin{equation}
+  P(w_i) = \sum\limits_{j=1}^T P(w_i | z_i = j) P(z_i = j)
+\end{equation}
+
+LDA distinguishes itself from other probabilistic topic model by including a \textit{Dirichlet prior} on the $\theta$ parameter, which is responsible for determining which topics are important for a given document.
+\cite{lda}.
+
+\subsection{Gibbs Sampling}
+Gibbs sampling is the means by which
+
+\subsection{Previous Work on FLDA}
 The primary source of information came from Professor John Cho's paper on FLDA \cite{flda}. 
 
 To solve this, a group of researchers proposed a new LDA model - one that could take into account these connections from the Twitter network. This is known as Followship-LDA (FLDA)
+
+The Gibbs sampling equations for FLDA have also been tweaked to 
+\begin{equation}\label{eq:flda_sem}
+  \begin{gathered}
+    p(z_{m, n} | z_{-(m, n)}, x, w, e, y, \alpha, \beta, \gamma, \epsilon, \rho) \propto \\
+      \frac{(c_{z_{m, n}, m, *}^{-(m, n)} + d_{z_{m, n}, m, *, *} + \alpha_{z_{m, n}}) (c_{z_{m, n}, *, w_{m, n}}^{-(m, n)} + \beta_{w_{m, n}})}
+      {c_{z_{m, n}, *, *}^{-(m, n)} + \sum^W_{i = 1}\beta_i}
+  \end{gathered}
+\end{equation}
+
+\begin{equation}\label{eq:flda_net_0}
+  \begin{gathered}
+    p(x_{m, l}, y_{m, l} = 0 | y_{-(m, l)}, x_{-(m, l)}, w, z, e, \alpha, \beta, \gamma, \epsilon, \rho) \propto \\
+      (c_{x_{m, l}, m, *} + d_{x_{m, l}, m, *, *}^{-(m, l)} + \alpha_{x_{m, l}})(d_{*, m, *, 0}^{-(m, l)} + \rho_0) \times
+      \frac{d_{*, *, e_{m, l}, 0}^{-(m, l)} + \epsilon_{e_{m, l}}}
+      {d_{*, *, *, 0}^{-(m, l)} + \sum^M_{i = 1}\epsilon_i}
+  \end{gathered}
+\end{equation}
+
+\begin{equation}\label{eq:flda_net_1}
+  \begin{gathered}
+    p(x_{m, l}, y_{m, l} = 1 | y_{-(m, l)}, x_{-(m, l)}, w, z, e, \alpha, \beta, \gamma, \epsilon, \rho) \propto \\
+      (c_{x_{m, l}, m, *} + d_{x_{m, l}, m, *, *}^{-(m, l)} + \alpha_{x_{m, l}})(d_{*, m, *, 1}^{-(m, l)} + \rho_1) \times
+      \frac{d_{x_{m, l}, *, e_{m, l}, 1}^{-(m, l)} + \gamma_{e_{m, l}}}
+      {d_{x_{m, l}, *, *, 1}^{-(m, l)} + \sum^M_{i = 1}\gamma_i}
+  \end{gathered}
+\end{equation}
+
+blah blah Equation \ref{eq:flda_sem}
 
 %%%%%%%%%%%%%%%%%%%%%%%% Section 3: System Design and Approaches%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{System Design and Approaches}
@@ -74,8 +163,9 @@ Given that LDA is already a well known model, there are many existing open sourc
 
 To narrow the scope of my project, I decided to focus only on implementing a working version of the FLDA described in 
 
-Having defined the scope of my project, I 
-located an implementation of  \cite{gibbs_lda}
+Having defined the scope of my project, I located an implementation of  \cite{gibbs_lda}
+
+To represent the 3D and 4D matrices $c_{z, m, w}$ and $d_{x, m, e, y}$ respectively, multiple 1D and 2D arrays were used. These arrays aggregate the entries in the unrepresented dimension(s), thereby reducing the dimensions of a very large matrix. This greatly increases the speed at which the algorithm can run, though at the obvious cost of requiring more space to store redundant information.
 % \begin{figure}
 %   \centering
 %     \includegraphics[width=0.7\textwidth]{architecture}
@@ -99,18 +189,6 @@ I worked with another student on cleaning the tweets from each individual user. 
 \subsection{Preliminary Results}
 As I was extending an existing software package, I needed to ensure that the original program would reliably run LDA on a modified dataset.
 
-% \begin{table} [h]
-% \begin{center}
-% \begin{tabular}{ l | l | l | l | l | l }
-%   Intercept & V1 (CriticScore) & V2 (AudScore) & V3 (StarRank) & V4 (Year) & V5 (NumTheaters) \\
-%   \hline
-%   -0.20523 & 0.04814 & 0.09007 & 0.04626 & -0.07458 & 0.45317 \\
-% \end{tabular}
-% \caption{Coefficients for the opening weekend gross linear model}
-% \label{table:openlin}
-% \end{center}
-% \end{table}
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 5: Evaluation and Discussion%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions and Future Work}
@@ -130,7 +208,7 @@ Two programming languages were used in this project:
 \item \textbf{C++}: 
 \end{enumerate}
 
-\end{multicols}
+% \end{multicols}
 
 \begin{thebibliography}{9}
 % APA Style
