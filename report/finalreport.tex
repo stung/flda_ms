@@ -88,7 +88,7 @@ Using statistical techniques, it is possible to invert this process and infer th
 \subsection{LDA}
 To start, we first define some variables and equations. $P(z)$ is the probability distribution of topics $z$ over a given document - an example of this would be the equal document we generated previously. There, both topics 1 and 2 had a $50\%$ probability of showing up in the document. $P(w | z)$ is the probability of word $w$ being chosen, given topic $z$. This would be represented by the probabilities listed in Table \ref{tab:ldatopics}. More common or otherwise prominent words for a topic $z$ are given higher weights that the less used ones. A document can therefore be generated, word by word, by first selecting a topic from the distribution of topics, and then sampling a word $w_i$ from the topic-word distribution $P(w | z)$. We represent these two actions with $P(z_i = j)$, which is the probability that for the $i$th word token in a given document, the $j$th topic was selected, and $P(w_i | z_i = j)$, which is the probability of word $w_i$ in topic $j$'s word distribution.
 
-We can simplify the notation using $\phi^{(j)}$ to represent the distribution of the words for topic $j$, and $\theta^{(d)}$ to represent the distribution of topics for document $d$. In essence, $\phi$ denotes which words are important for a given topic, and $\theta$ will list out the important topics for a given document. Finally, given that we are inferring these document-topic and topic-word distributions with no prior information about the corpus (ie. the set of documents), we must select a total number of topics $T$ for our inference. The total number of documents in our corpus is $D$, where each document $d$ consists of $N_d$ words, and the total number of words is $N$, where $N = \sum\limits^D{N_d}$ \cite{lda}. Table \ref{tab:ldavars} lists out the aforementioned variables for easy reference.
+We can simplify the notation using $\phi^{(j)}$ to represent this multinomial distribution of the words for topic $j$, and $\theta^{(d)}$ to represent the multinomial distribution of topics for document $d$. In essence, $\phi$ denotes which words are important for a given topic, and $\theta$ will list out the important topics for a given document. Finally, given that we are inferring these document-topic and topic-word distributions with no prior information about the corpus (ie. the set of documents), we must select a total number of topics $T$ for our inference. The total number of documents in our corpus is $D$, where each document $d$ consists of $N_d$ words, and the total number of words is $N$, where $N = \sum\limits^D{N_d}$ \cite{lda}. Table \ref{tab:ldavars} lists out the aforementioned variables for easy reference.
 \begin{table}[h]
   \centering % used for centering table
   \begin{tabular}{ |l|l| }
@@ -116,10 +116,10 @@ We can simplify the notation using $\phi^{(j)}$ to represent the distribution of
 Given the document-topic and topic-word probability distributions, we can subsequently define the probability distribution of each word in a document with $P(w_i)$, in Equation \ref{eq:lda_probdist}.
 
 \begin{equation}\label{eq:lda_probdist}
-  P(w_i) = \sum\limits_{j=1}^T P(w_i | z_i = j) P(z_i = j) = \phi^{(j)}_i * \theta^{(d)}_i
+  P(w_i) = \sum\limits_{j=1}^T P(w_i | z_i = j) P(z_i = j) = (\phi^{(j)}_i) (\theta^{(d)}_i)
 \end{equation}
 
-As the number of topics is manually specified by the user, this operation's space and time complexity is limited by $T$. If we extend the visualization from Table \ref{tab:ldatopics} (simplified as $\phi$), we can imagine $\phi$ as a 2D matrix, with each word token index represented by the row indices $i$, the topic indices represented by the column indices $j$. The entries of this matrix are then the probabilities of word $i$ being assigned to a topic $j$. We use a similar definition to define $\theta$, where the entries of this 2D matrix are the probabilities of topic $i$ being assigned to document $j$. Figure \ref{fig:topicmodel} gives a visual representation of Equation \ref{eq:lda_probdist}. It is clear to see from Figure \ref{fig:topicmodel} that it is important to choose an appropriate value for $T$ in order to have meaningful results for $\theta$ and $\phi$ \cite{lda}.
+As the number of topics is manually specified by the user, this operation's space and time complexity is constrained by $T$. If we extend the visualization from Table \ref{tab:ldatopics} (simplified as $\phi$), we can imagine $\phi$ as a 2D matrix, with each word token index represented by the row indices $i$, the topic indices represented by the column indices $j$. The entries of this matrix are then the probabilities of word $i$ being assigned to a topic $j$. We use a similar definition to define $\theta$, where the entries of this 2D matrix are the probabilities of topic $i$ being assigned to document $j$. Figure \ref{fig:topicmodel} gives a visual representation of Equation \ref{eq:lda_probdist}. It is clear to see from Figure \ref{fig:topicmodel} that it is important to choose an appropriate value for $T$ in order to have meaningful results for $\theta$ and $\phi$ \cite{lda}.
 
 \begin{figure}[h]
   \centering
@@ -128,12 +128,28 @@ As the number of topics is manually specified by the user, this operation's spac
   \label{fig:topicmodel}
 \end{figure}
 
-
-LDA distinguishes itself from other probabilistic topic model by including a \textit{Dirichlet prior} on the $\theta$ parameter, which is responsible for determining which topics are important for a given document.
-\cite{lda}.
+LDA distinguishes itself from other probabilistic topic model by including a \textit{Dirichlet prior} on the $\theta$ parameter. The use of a prior allows for the algorithm to make a general assumption about how its weights are generated, based on the total number of topics chosen \cite{hoffman}. As the Dirichlet distribution is a conjugate prior for the multinomial distribution, this means that the posterior distribution will also be a Dirichlet. In addition, it is relatively simple to sample from the Dirichlet distribution. While a detailed explanation of conjugate priors is outside of the scope of this paper, we will turn our focus instead to the portions that will allow us to implement LDA \cite{lda}. It is sufficient to know that the Dirichlet distribution is used to model the multinomial distribution of $\theta$, and the parameters of the Dirichlet distribution are known as \textit{hyperparameters}, distinguishing them from the parameters $\theta$ and $\phi$ of the underlying distribution. In our situation, each hyperparameter $\alpha_j$ from $\alpha_1, ..., \alpha_T$ represents the initial, prior count for the number of times topic $j$ was sampled in a document. It is important to remember that this occurs before we have even begun the actual sampling process.
 
 \subsection{Gibbs Sampling}
-Gibbs sampling is the means by which
+As mentioned in the previous section, one of the reasons a Dirichlet prior is included is because it is simple to sample from a Dirichlet distribution. While it is possible to directly estimate the parameters $\theta$ and $\phi$, this has a tendency of converging on local maxima, leading to results that may differ wildly from run to run \cite{hoffman}. Instead, LDA 
+
+Gibbs sampling utilizes \textit{Markov Chain Monte Carlo} (MCMC), which builds its next response 
+
+it is necessary to sample from the distribution 
+
+
+
+
+\begin{equation}\label{eq:lda_gibbsamp}
+  P(z_i = j | z_{-i}, w_i, d_i, \cdot) \propto
+    (\frac{C_{w_ij}^{WT} + \beta}
+    {\sum\limits^W_{w = 1} C_{wj}^{WT} + W\beta})
+    (\frac{C_{d_ij}^{DT} + \alpha}
+    {\sum\limits^T_{t = 1} C_{d_ij}^{DT} + T\alpha})
+\end{equation}
+Equation \ref{eq:lda_gibbsamp} shows one such example of a Gibbs sampling equation, given by Griffiths and Steyvers \cite{griff}
+
+\cite{lda}
 
 \subsection{Previous Work on FLDA}
 The primary source of information came from Professor John Cho's paper on FLDA \cite{flda}. 
@@ -223,6 +239,12 @@ Two programming languages were used in this project:
 % APA Style
 \bibitem{flda}
 Bi, B., Tian, Y., Sismanis, Y., Balmin, A., \& Cho, J. (2014, February). Scalable topic-specific influence analysis on microblogs. In \textit{Proceedings of the 7th ACM international conference on Web search and data mining} (pp. 513-522). ACM.
+
+\bibitem{griff}
+Griffiths, T. L., \& Steyvers, M. (2004). Finding scientific topics. \textit{Proceedings of the National Academy of Science, 101}, 5228-5235.
+
+\bibitem{hoffman}
+Hofmann, T. (1999, August). Probabilistic latent semantic indexing. In \textit{Proceedings of the 22nd annual international ACM SIGIR conference on Research and development in information retrieval} (pp. 50-57). ACM.
 
 \bibitem{lda}
 Steyvers, M., \& Griffiths, T. (2007). Probabilistic topic models. \textit{Handbook of latent semantic analysis}, 427(7), 424-440.
