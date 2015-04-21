@@ -86,9 +86,9 @@ To understand how FLDA works, it is necessary to first gain an understanding of 
 Using statistical techniques, it is possible to invert this process and infer the set of topics that were used to generate the documents in question. That is, given a set of documents, one could return a list of topics, each with their own probability distribution of likely words. This is the process known as LDA.
 
 \subsection{LDA}
-To start, we need to define some variables and equations. $P(z)$ is the probability distribution of topics $z$ over a given document - an example of this would be the equal document we generated previously. There, both topics 1 and 2 had a $50\%$ probability of showing up in the document. $P(w | z)$ is the probability of word $w$ being chosen, given topic $z$. This would be represented by the probabilities listed in Table \ref{tab:ldatopics}. More common or otherwise prominent words for a topic $z$ are given higher weights that the less used ones. A document can therefore be generated, word by word, by first selecting a topic from the distribution of topics, and then sampling a word $w_i$ from the topic-word distribution $P(w | z)$. We represent these two actions with $P(z_i = j)$, which is the probability that for the $i$th word token in a given document, the $j$th topic was selected, and $P(w_i | z_i = j)$, which is the probability of word $w_i$ in topic $j$'s word distribution. We can simplify the notation using $\phi^{(j)}$ to represent the distribution of the words for topic $j$, and $\theta^{(d)}$ to represent the distribution of topics for document $d$. Finally, given that we are inferring these document-topic and topic-word distributions with no prior information about the corpus (ie. the set of documents), we must select a total number of topics $T$ for our inference. The total number of documents in our corpus is $D$, where each document $d$ consists of $N_d$ words, and the total number of words is $N$, where $N = \sum\limits^D{N_d}$ \cite{lda}. 
+To start, we first define some variables and equations. $P(z)$ is the probability distribution of topics $z$ over a given document - an example of this would be the equal document we generated previously. There, both topics 1 and 2 had a $50\%$ probability of showing up in the document. $P(w | z)$ is the probability of word $w$ being chosen, given topic $z$. This would be represented by the probabilities listed in Table \ref{tab:ldatopics}. More common or otherwise prominent words for a topic $z$ are given higher weights that the less used ones. A document can therefore be generated, word by word, by first selecting a topic from the distribution of topics, and then sampling a word $w_i$ from the topic-word distribution $P(w | z)$. We represent these two actions with $P(z_i = j)$, which is the probability that for the $i$th word token in a given document, the $j$th topic was selected, and $P(w_i | z_i = j)$, which is the probability of word $w_i$ in topic $j$'s word distribution.
 
-Table \ref{tab:ldavars} lists out the aforementioned variables for easy reference.
+We can simplify the notation using $\phi^{(j)}$ to represent the distribution of the words for topic $j$, and $\theta^{(d)}$ to represent the distribution of topics for document $d$. In essence, $\phi$ denotes which words are important for a given topic, and $\theta$ will list out the important topics for a given document. Finally, given that we are inferring these document-topic and topic-word distributions with no prior information about the corpus (ie. the set of documents), we must select a total number of topics $T$ for our inference. The total number of documents in our corpus is $D$, where each document $d$ consists of $N_d$ words, and the total number of words is $N$, where $N = \sum\limits^D{N_d}$ \cite{lda}. Table \ref{tab:ldavars} lists out the aforementioned variables for easy reference.
 \begin{table}[h]
   \centering % used for centering table
   \begin{tabular}{ |l|l| }
@@ -98,7 +98,7 @@ Table \ref{tab:ldavars} lists out the aforementioned variables for easy referenc
     \hline
     $P(z)$ & Distribution of topics $z$ over a given document \\
     $P(w | z)$ & Distribution of words $w$ over a given topic $z$ \\
-    $P(z_i = j)$ & Probability that topic $j$ was sampled for the $i$th word \\
+    $P(z_i = j)$ & Probability that topic $j$ was sampled for the $i$th word in a given document \\
     $P(w_i | z_i = j)$ & Probability of word $w_i$ for topic $j$ \\
     $\phi^{(j)}$ & Simplified representation of $P(w | z = j)$, for topic $j$ \\
     $\theta^{(d)}$ & Simplified representation of $P(z)$, for document $d$ \\
@@ -113,19 +113,21 @@ Table \ref{tab:ldavars} lists out the aforementioned variables for easy referenc
   \label{tab:ldavars}
 \end{table}
 
-This 
+Given the document-topic and topic-word probability distributions, we can subsequently define the probability distribution of each word in a document with $P(w_i)$, in Equation \ref{eq:lda_probdist}.
 
-\begin{figure}
+\begin{equation}\label{eq:lda_probdist}
+  P(w_i) = \sum\limits_{j=1}^T P(w_i | z_i = j) P(z_i = j) = \phi^{(j)}_i * \theta^{(d)}_i
+\end{equation}
+
+As the number of topics is manually specified by the user, this operation's space and time complexity is limited by $T$. If we extend the visualization from Table \ref{tab:ldatopics} (simplified as $\phi$), we can imagine $\phi$ as a 2D matrix, with each word token index represented by the row indices $i$, the topic indices represented by the column indices $j$. The entries of this matrix are then the probabilities of word $i$ being assigned to a topic $j$. We use a similar definition to define $\theta$, where the entries of this 2D matrix are the probabilities of topic $i$ being assigned to document $j$. Figure \ref{fig:topicmodel} gives a visual representation of Equation \ref{eq:lda_probdist}. It is clear to see from Figure \ref{fig:topicmodel} that it is important to choose an appropriate value for $T$ in order to have meaningful results for $\theta$ and $\phi$ \cite{lda}.
+
+\begin{figure}[h]
   \centering
     \includegraphics[width=0.7\textwidth]{topicmodel}
-  \caption {Topic model ASDFASDFADSFASDFASDFADSF}
+  \caption {Visual representation of the probabilistic topic model}
   \label{fig:topicmodel}
 \end{figure}
-Figure \ref{fig:topicmodel} shows a visual overview of our system. 
 
-\begin{equation}
-  P(w_i) = \sum\limits_{j=1}^T P(w_i | z_i = j) P(z_i = j)
-\end{equation}
 
 LDA distinguishes itself from other probabilistic topic model by including a \textit{Dirichlet prior} on the $\theta$ parameter, which is responsible for determining which topics are important for a given document.
 \cite{lda}.
