@@ -103,6 +103,8 @@ public:
     map<int, int> _id2id; // also used only for inference
     int M; // number of documents
     int V; // number of words
+    // int L; // number of users
+    // int N; // number of friends(??)
     
     dataset() {
 		docs = NULL;
@@ -169,7 +171,7 @@ public:
     static int read_wordmap(string wordmapfile, mapid2word * pid2word);
     
     int read_trndata(string dfile, string wordmapfile);
-	int read_frnddata(string dfile, string usermapfile);
+	// int read_frnddata(string dfile, string usermapfile);
 };
 
 #endif

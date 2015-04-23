@@ -115,6 +115,7 @@ void model::set_default_values() {
     
     dir = "./";
     dfile = "trndocs.dat";
+    ffile = "frnddocs.dat";
     model_name = "model-final";    
     model_status = MODEL_STATUS_UNKNOWN;
     
@@ -130,7 +131,6 @@ void model::set_default_values() {
     liter = 0;
     savestep = 200;    
     twords = 0;
-    withrawstrs = 0;
     
     p = NULL;
     z = NULL;
@@ -140,6 +140,23 @@ void model::set_default_values() {
     ndsum = NULL;
     theta = NULL;
     phi = NULL;
+
+    // FLDA variables
+    // model parameters
+    L = 0;
+
+    // sampling variables
+    x = NULL; 
+    y = NULL;
+    n_lda = NULL;
+    A = NULL;
+    B = NULL;
+    C0 = NULL;
+    C1 = NULL;
+    D0 = NULL;
+    D0sum = 0;
+    D1 = NULL;
+    D1sum = NULL;
 }
 
 int model::parse_args(int argc, char ** argv) {
@@ -168,25 +185,25 @@ int model::init(int argc, char ** argv) {
 
 int model::save_model(string model_name) {
     if (save_model_tassign(dir + model_name + tassign_suffix)) {
-    return 1;
+        return 1;
     }
     
     if (save_model_others(dir + model_name + others_suffix)) {
-    return 1;
+        return 1;
     }
     
     if (save_model_theta(dir + model_name + theta_suffix)) {
-    return 1;
+        return 1;
     }
     
     if (save_model_phi(dir + model_name + phi_suffix)) {
-    return 1;
+        return 1;
     }
     
     if (twords > 0) {
-    if (save_model_twords(dir + model_name + twords_suffix)) {
-        return 1;
-    }
+        if (save_model_twords(dir + model_name + twords_suffix)) {
+            return 1;
+        }
     }
     
     return 0;
@@ -197,16 +214,16 @@ int model::save_model_tassign(string filename) {
     
     FILE * fout = fopen(filename.c_str(), "w");
     if (!fout) {
-    printf("Cannot open file %s to save!\n", filename.c_str());
-    return 1;
+        printf("Cannot open file %s to save!\n", filename.c_str());
+        return 1;
     }
 
     // wirte docs with topic assignments for words
     for (i = 0; i < ptrndata->M; i++) {    
-    for (j = 0; j < ptrndata->docs[i]->length; j++) {
-        fprintf(fout, "%d:%d ", ptrndata->docs[i]->words[j], z[i][j]);
-    }
-    fprintf(fout, "\n");
+        for (j = 0; j < ptrndata->docs[i]->length; j++) {
+            fprintf(fout, "%d:%d ", ptrndata->docs[i]->words[j], z[i][j]);
+        }
+        fprintf(fout, "\n");
     }
 
     fclose(fout);
@@ -217,15 +234,15 @@ int model::save_model_tassign(string filename) {
 int model::save_model_theta(string filename) {
     FILE * fout = fopen(filename.c_str(), "w");
     if (!fout) {
-    printf("Cannot open file %s to save!\n", filename.c_str());
-    return 1;
+        printf("Cannot open file %s to save!\n", filename.c_str());
+        return 1;
     }
     
     for (int i = 0; i < M; i++) {
-    for (int j = 0; j < K; j++) {
-        fprintf(fout, "%f ", theta[i][j]);
-    }
-    fprintf(fout, "\n");
+        for (int j = 0; j < K; j++) {
+            fprintf(fout, "%f ", theta[i][j]);
+        }
+        fprintf(fout, "\n");
     }
     
     fclose(fout);
@@ -236,15 +253,15 @@ int model::save_model_theta(string filename) {
 int model::save_model_phi(string filename) {
     FILE * fout = fopen(filename.c_str(), "w");
     if (!fout) {
-    printf("Cannot open file %s to save!\n", filename.c_str());
-    return 1;
+        printf("Cannot open file %s to save!\n", filename.c_str());
+        return 1;
     }
     
     for (int i = 0; i < K; i++) {
-    for (int j = 0; j < V; j++) {
-        fprintf(fout, "%f ", phi[i][j]);
-    }
-    fprintf(fout, "\n");
+        for (int j = 0; j < V; j++) {
+            fprintf(fout, "%f ", phi[i][j]);
+        }
+        fprintf(fout, "\n");
     }
     
     fclose(fout);    
@@ -255,8 +272,8 @@ int model::save_model_phi(string filename) {
 int model::save_model_others(string filename) {
     FILE * fout = fopen(filename.c_str(), "w");
     if (!fout) {
-    printf("Cannot open file %s to save!\n", filename.c_str());
-    return 1;
+        printf("Cannot open file %s to save!\n", filename.c_str());
+        return 1;
     }
 
     fprintf(fout, "alpha=%f\n", alpha);
@@ -274,34 +291,34 @@ int model::save_model_others(string filename) {
 int model::save_model_twords(string filename) {
     FILE * fout = fopen(filename.c_str(), "w");
     if (!fout) {
-    printf("Cannot open file %s to save!\n", filename.c_str());
-    return 1;
+        printf("Cannot open file %s to save!\n", filename.c_str());
+        return 1;
     }
     
     if (twords > V) {
-    twords = V;
+        twords = V;
     }
     mapid2word::iterator it;
     
     for (int k = 0; k < K; k++) {
-    vector<pair<int, double> > words_probs;
-    pair<int, double> word_prob;
-    for (int w = 0; w < V; w++) {
-        word_prob.first = w;
-        word_prob.second = phi[k][w];
-        words_probs.push_back(word_prob);
-    }
-    
-        // quick sort to sort word-topic probability
-    utils::quicksort(words_probs, 0, words_probs.size() - 1);
-    
-    fprintf(fout, "Topic %dth:\n", k);
-    for (int i = 0; i < twords; i++) {
-        it = id2word.find(words_probs[i].first);
-        if (it != id2word.end()) {
-        fprintf(fout, "\t%s   %f\n", (it->second).c_str(), words_probs[i].second);
+        vector<pair<int, double> > words_probs;
+        pair<int, double> word_prob;
+        for (int w = 0; w < V; w++) {
+            word_prob.first = w;
+            word_prob.second = phi[k][w];
+            words_probs.push_back(word_prob);
         }
-    }
+        
+        // quick sort to sort word-topic probability
+        utils::quicksort(words_probs, 0, words_probs.size() - 1);
+        
+        fprintf(fout, "Topic %dth:\n", k);
+        for (int i = 0; i < twords; i++) {
+            it = id2word.find(words_probs[i].first);
+            if (it != id2word.end()) {
+                fprintf(fout, "\t%s   %f\n", (it->second).c_str(), words_probs[i].second);
+            }
+        }
     }
     
     fclose(fout);    
@@ -389,95 +406,6 @@ int model::init_est() {
     return 0;
 }
 
-int model::init_est_flda() {
-    int m, n, w, k;
-
-    p = new double[K];
-
-    // + read training data
-    ptrndata = new dataset;
-    if (ptrndata->read_trndata(dir + dfile, dir + wordmapfile)) {
-        printf("Fail to read tweet training data!\n");
-        return 1;
-    }
-
-    // read friend network data
-    pfrnddata = new dataset;
-    if (pfrnddata->read_frnddata(dir + ffile, dir + friendmapfile)) {
-        printf("Fail to read friend training data!\n");
-        return 1;
-    }
-
-    printf("Friend data success read?");
-
-    // + allocate memory and assign values for variables
-    M = ptrndata->M;
-    V = ptrndata->V;
-    // K: from command line or default value
-    // alpha, beta: from command line or default values
-    // niters, savestep: from command line or default values
-
-    nw = new int*[V];
-    for (w = 0; w < V; w++) {
-        nw[w] = new int[K];
-        for (k = 0; k < K; k++) {
-            nw[w][k] = 0;
-        }
-    }
-    
-    nd = new int*[M];
-    for (m = 0; m < M; m++) {
-        nd[m] = new int[K];
-        for (k = 0; k < K; k++) {
-            nd[m][k] = 0;
-        }
-    }
-    
-    nwsum = new int[K];
-    for (k = 0; k < K; k++) {
-       nwsum[k] = 0;
-    }
-    
-    ndsum = new int[M];
-    for (m = 0; m < M; m++) {
-       ndsum[m] = 0;
-    }
-
-    srandom(time(0)); // initialize for random number generation
-    z = new int*[M];
-    for (m = 0; m < ptrndata->M; m++) {
-        int N = ptrndata->docs[m]->length;
-        z[m] = new int[N];
-        
-        // initialize for z
-        for (n = 0; n < N; n++) {
-            int topic = (int)(((double)random() / RAND_MAX) * K);
-            z[m][n] = topic;
-            
-            // number of instances of word i assigned to topic j
-            nw[ptrndata->docs[m]->words[n]][topic] += 1;
-            // number of words in document i assigned to topic j
-            nd[m][topic] += 1;
-            // total number of words assigned to topic j
-            nwsum[topic] += 1;
-        } 
-        // total number of words in document i
-        ndsum[m] = N;      
-    }
-    
-    theta = new double*[M];
-    for (m = 0; m < M; m++) {
-        theta[m] = new double[K];
-    }
-    
-    phi = new double*[K];
-    for (k = 0; k < K; k++) {
-        phi[k] = new double[V];
-    }    
-    
-    return 0;
-}
-
 void model::estimate() {
     if (twords > 0) {
     	// print out top words per topic
@@ -524,6 +452,252 @@ void model::estimate() {
     save_model(utils::generate_model_name(-1));
 }
 
+int model::sampling(int m, int n) {
+    // remove z_i from the count variables
+    int topic = z[m][n];
+    int w = ptrndata->docs[m]->words[n];
+    nw[w][topic] -= 1;
+    nd[m][topic] -= 1;
+    nwsum[topic] -= 1;
+    ndsum[m] -= 1;
+
+    double Vbeta = V * beta;
+    double Kalpha = K * alpha;    
+    // do multinomial sampling via cumulative method
+    for (int k = 0; k < K; k++) {
+        p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
+                (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
+    }
+
+    // Why do you add these all up? It becomes a cumulative up-to-k array
+    // cumulate multinomial parameters
+    for (int k = 1; k < K; k++) {
+       p[k] += p[k - 1];
+    }
+
+    // Creates a random number that's smaller than all of the numbers together
+    // scaled sample because of unnormalized p[]
+    double u = ((double)random() / RAND_MAX) * p[K - 1];
+    
+    // The topic with the highest probability will have the largest range
+    // The random u from above will be most likely to fall under this topic
+    for (topic = 0; topic < K; topic++) {
+        if (p[topic] > u) {
+            break;
+        }
+    }
+    
+    // add newly estimated z_i to count variables
+    nw[w][topic] += 1;
+    nd[m][topic] += 1;
+    nwsum[topic] += 1;
+    ndsum[m] += 1;    
+    
+    // Returns topic(index) that broke on the loop above
+    return topic;
+}
+
+void model::compute_theta() {
+    for (int m = 0; m < M; m++) {
+        for (int k = 0; k < K; k++) {
+            theta[m][k] = (nd[m][k] + alpha) / (ndsum[m] + K * alpha);
+        }
+    }
+}
+
+void model::compute_phi() {
+    for (int k = 0; k < K; k++) {
+        for (int w = 0; w < V; w++) {
+            phi[k][w] = (nw[w][k] + beta) / (nwsum[k] + V * beta);
+        }
+    }
+}
+
+int model::init_est_flda() {
+    int m, n, w, l, k;
+
+    p = new double[K];
+
+    // + read training data
+    ptrndata = new dataset;
+    if (ptrndata->read_trndata(dir + dfile, dir + wordmapfile)) {
+        printf("Fail to read tweet training data!\n");
+        return 1;
+    }
+
+    // read friend network data
+    pfrnddata = new dataset;
+    if (pfrnddata->read_trndata(dir + ffile, dir + friendmapfile)) {
+        printf("Fail to read friend training data!\n");
+        return 1;
+    }
+
+    // + allocate memory and assign values for variables
+    M = ptrndata->M;
+    V = ptrndata->V;
+    L = pfrnddata->docs[m]->length;
+    // K: from command line or default value
+    // alpha, beta: from command line or default values
+    // niters, savestep: from command line or default values
+
+    nw = new int*[V];
+    for (w = 0; w < V; w++) {
+        nw[w] = new int[K];
+        for (k = 0; k < K; k++) {
+            nw[w][k] = 0;
+        }
+    }
+    
+    nd = new int*[M];
+    for (m = 0; m < M; m++) {
+        nd[m] = new int[K];
+        for (k = 0; k < K; k++) {
+            nd[m][k] = 0;
+        }
+    }
+    
+    nwsum = new int[K];
+    for (k = 0; k < K; k++) {
+       nwsum[k] = 0;
+    }
+    
+    // This sum over the users/documents may not be needed
+    // ndsum = new int[M];
+    // for (m = 0; m < M; m++) {
+    //    ndsum[m] = 0;
+    // }
+
+    // FLDA matrices
+    // Eq 1
+    n_lda = new int*[M];
+    for (m = 0; m < M; m++) {
+        n_lda[m] = new int[K];
+        for (k = 0; k < K; k++) {
+            n_lda[m][k] = 0;
+        }
+    }
+
+    // Eq 2 and 3
+    A = new int*[M];
+    for (m = 0; m < M; m++) {
+        A[m] = new int[K];
+        for (k = 0; k < K; k++) {
+            A[m][k] = 0;
+        }
+    }
+
+    B = new int*[M];
+    for (m = 0; m < M; m++) {
+        B[m] = new int[K];
+        for (k = 0; k < K; k++) {
+            B[m][k] = 0;
+        }
+    }
+
+    C0 = new int[M];
+    for (m = 0; m < M; m++) {
+        C0[m] = 0;
+    }
+
+    C1 = new int[M];
+    for (m = 0; m < M; m++) {
+        C1[m] = 0;
+    }
+
+    D0 = new int[L];
+    for (l = 0; l < L; l++) {
+        D0[l] = 0;
+    }
+
+    D1sum = 0;
+
+    D1 = new int*[L];
+    for (l = 0; l < L; l++) {
+        D1[l] = new int[K];
+        for (k = 0; k < K; k++) {
+            D1[l][k] = 0;
+        }
+    }
+
+    D1sum = new int[K];
+    for (k = 0; k < K; k++) {
+        D1sum[k] = 0;
+    }
+
+    printf("Finished initializing matrices!");
+
+    srandom(time(0)); // initialize for random number generation
+    z = new int*[M];
+
+    // FLDA
+    x = new int*[M];
+    y = new int*[M];
+    for (m = 0; m < ptrndata->M; m++) {
+        int N = ptrndata->docs[m]->length;
+        z[m] = new int[N];
+
+        // FLDA
+        x[m] = new int[L];
+        y[m] = new int[L];
+        
+        // initialize for z
+        for (n = 0; n < N; n++) {
+            int topic = (int)(((double)random() / RAND_MAX) * K);
+            z[m][n] = topic;
+            
+            // number of instances of word i assigned to topic j
+            nw[ptrndata->docs[m]->words[n]][topic] += 1;
+            // number of words in document i assigned to topic j
+            nd[m][topic] += 1;
+            // total number of words assigned to topic j
+            nwsum[topic] += 1;
+        } 
+        // total number of words in document i
+        // ndsum[m] = N;      
+
+        for (l = 0; l < L; l++) {
+            int topic = (int)(((double)random() / RAND_MAX) * K);
+            int indicator = 0;
+            if (((double)random() / RAND_MAX) > 0.5) {
+                indicator = 1;
+            } 
+
+            x[m][l] = topic;
+            y[m][l] = indicator;
+
+            // Eq 1
+            n_lda[m][topic] += 1;
+
+            // Eq 2
+            A[m][topic] += 1;
+            B[m][topic] += 1;
+
+            C0[m] += 1;
+            C1[m] += 1;
+
+            D0[l] += 1;
+            D0sum += 1;
+
+            D1[l][k] += 1;
+            D1sum[k] += 1;
+        }
+    }
+    
+    theta = new double*[M];
+    for (m = 0; m < M; m++) {
+        theta[m] = new double[K];
+    }
+    
+    phi = new double*[K];
+    for (k = 0; k < K; k++) {
+        phi[k] = new double[V];
+    }    
+
+    printf("Finished initializing everything!");
+
+    return 0;
+}
+
 void model::estimate_flda() {
     if (twords > 0) {
         // print out top words per topic
@@ -539,16 +713,22 @@ void model::estimate_flda() {
         // for all z_i
         for (int m = 0; m < M; m++) {
             // LDA portion of sampling
-            for (int n = 0; n < pfrnddata->docs[m]->length; n++) {
+            for (int n = 0; n < ptrndata->docs[m]->length; n++) {
                 // (z_i = z[m][n])
                 // sample from p(z_i|z_-i, w)
-                int topic = sampling(m, n);
+                int topic = sampling_flda_eq1(m, n);
                 z[m][n] = topic;
             }
 
             // FLDA portion of network analysis
-            // for () {
-            // }
+            for (int l = 0; l < pfrnddata->docs[m]->length; l++) {
+                pair<int, bool> samppair;
+                samppair = sampling_flda_eq2(m, l);
+                int topic = samppair.first;
+                bool indicator = samppair.second;
+                x[m][l] = topic;
+                y[m][l] = indicator;
+            }
         }
         
         if (savestep > 0) {
@@ -570,61 +750,16 @@ void model::estimate_flda() {
     save_model(utils::generate_model_name(-1));
 }
 
-int model::sampling(int m, int n) {
+int model::sampling_flda_eq1(int m, int n) {
     // remove z_i from the count variables
     int topic = z[m][n];
     int w = ptrndata->docs[m]->words[n];
     nw[w][topic] -= 1;
     nd[m][topic] -= 1;
-    nwsum[topic] -= 1;
     ndsum[m] -= 1;
 
     double Vbeta = V * beta;
-    double Kalpha = K * alpha;    
-    // do multinomial sampling via cumulative method
-    for (int k = 0; k < K; k++) {
-        p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
-                (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
-    }
-
-    // Why do you add these all up? It becomes a cumulative up-to-k array
-    // cumulate multinomial parameters
-    for (int k = 1; k < K; k++) {
-	   p[k] += p[k - 1];
-    }
-
-    // Creates a random number that's smaller than all of the numbers together
-    // scaled sample because of unnormalized p[]
-    double u = ((double)random() / RAND_MAX) * p[K - 1];
-    
-    // The topic with the highest probability will have the largest range
-    // The random u from above will be most likely to fall under this topic
-    for (topic = 0; topic < K; topic++) {
-    	if (p[topic] > u) {
-    	    break;
-    	}
-    }
-    
-    // add newly estimated z_i to count variables
-    nw[w][topic] += 1;
-    nd[m][topic] += 1;
-    nwsum[topic] += 1;
-    ndsum[m] += 1;    
-    
-    // Returns topic(index) that broke on the loop above
-    return topic;
-}
-
-int model::sampling_flda(int m, int l) {
-    // remove z_i from the count variables
-    int topic = z[m][l];
-    int w = ptrndata->docs[m]->words[l];
-    nw[w][topic] -= 1;
-    nd[m][topic] -= 1;
-    ndsum[m] -= 1;
-
-    double Vbeta = V * beta;
-    double Kalpha = K * alpha;    
+    // double Kalpha = K * alpha;    
     // do multinomial sampling via cumulative method
 
     // Equation 1
@@ -665,19 +800,50 @@ int model::sampling_flda(int m, int l) {
     return topic;
 }
 
-void model::compute_theta() {
-    for (int m = 0; m < M; m++) {
-	for (int k = 0; k < K; k++) {
-	    theta[m][k] = (nd[m][k] + alpha) / (ndsum[m] + K * alpha);
-	}
-    }
-}
 
-void model::compute_phi() {
+pair<int, bool> model::sampling_flda_eq2(int m, int l) {
+    // remove z_i from the count variables
+    int topic = z[m][l];
+    int w = ptrndata->docs[m]->words[l];
+    nw[w][topic] -= 1;
+    nd[m][topic] -= 1;
+    nwsum[topic] -= 1;
+    ndsum[m] -= 1;
+
+    double Vbeta = V * beta;
+    double Kalpha = K * alpha;    
+    // do multinomial sampling via cumulative method
     for (int k = 0; k < K; k++) {
-	for (int w = 0; w < V; w++) {
-	    phi[k][w] = (nw[w][k] + beta) / (nwsum[k] + V * beta);
-	}
+        p[k] = (nw[w][k] + beta) / (nwsum[k] + Vbeta) *
+                (nd[m][k] + alpha) / (ndsum[m] + Kalpha);
     }
+
+    // Why do you add these all up? It becomes a cumulative up-to-k array
+    // cumulate multinomial parameters
+    for (int k = 1; k < K; k++) {
+       p[k] += p[k - 1];
+    }
+
+    // Creates a random number that's smaller than all of the numbers together
+    // scaled sample because of unnormalized p[]
+    double u = ((double)random() / RAND_MAX) * p[K - 1];
+    
+    // The topic with the highest probability will have the largest range
+    // The random u from above will be most likely to fall under this topic
+    for (topic = 0; topic < K; topic++) {
+        if (p[topic] > u) {
+            break;
+        }
+    }
+    
+    // add newly estimated z_i to count variables
+    nw[w][topic] += 1;
+    nd[m][topic] += 1;
+    nwsum[topic] += 1;
+    ndsum[m] += 1;    
+    
+    // Returns topic(index) that broke on the loop above
+    pair<int, bool> final = make_pair(topic, false);
+    return final;
 }
 

@@ -188,78 +188,78 @@ int dataset::read_trndata(string dfile, string wordmapfile) {
     return 0;
 }
 
-int dataset::read_frnddata(string dfile, string friendmapfile) {
-	mapword2id word2id;
+// int dataset::read_frnddata(string dfile, string friendmapfile) {
+// 	mapword2id word2id;
     
-    FILE * fin = fopen(dfile.c_str(), "r");
-    if (!fin) {
-		printf("Cannot open friend file %s to read!\n", dfile.c_str());
-		return 1;
-    }   
+//     FILE * fin = fopen(dfile.c_str(), "r");
+//     if (!fin) {
+// 		printf("Cannot open friend file %s to read!\n", dfile.c_str());
+// 		return 1;
+//     }   
     
-    mapword2id::iterator it;    
-    char buff[BUFF_SIZE_LONG];
-    string line;
+//     mapword2id::iterator it;    
+//     char buff[BUFF_SIZE_LONG];
+//     string line;
     
-    // get the number of documents
-    fgets(buff, BUFF_SIZE_LONG - 1, fin);
-    M = atoi(buff);
-    if (M <= 0) {
-		printf("No document available!\n");
-		return 1;
-    }
+//     // get the number of documents
+//     fgets(buff, BUFF_SIZE_LONG - 1, fin);
+//     M = atoi(buff);
+//     if (M <= 0) {
+// 		printf("No document available!\n");
+// 		return 1;
+//     }
     
-    // allocate memory for corpus
-    if (docs) {
-		deallocate();
-    } else {
-		docs = new document*[M];
-    }
+//     // allocate memory for corpus
+//     if (docs) {
+// 		deallocate();
+//     } else {
+// 		docs = new document*[M];
+//     }
     
-    // set number of words to zero
-    V = 0;
+//     // set number of friends to zero
+//     V = 0;
     
-    for (int i = 0; i < M; i++) {
-		fgets(buff, BUFF_SIZE_LONG - 1, fin);
-		line = buff;
-		strtokenizer strtok(line, " \t\r\n");
-		int length = strtok.count_tokens();
-		// cout << i << endl;
+//     for (int i = 0; i < M; i++) {
+// 		fgets(buff, BUFF_SIZE_LONG - 1, fin);
+// 		line = buff;
+// 		strtokenizer strtok(line, " \t\r\n");
+// 		int length = strtok.count_tokens();
+// 		// cout << i << endl;
 
-		if (length < 0) {
-		    printf("Invalid (empty) document!\n");
-		    deallocate();
-		    M = V = 0;
-		    return 1;
-		}
+// 		if (length < 0) {
+// 		    printf("Invalid (empty) document!\n");
+// 		    deallocate();
+// 		    M = V = 0;
+// 		    return 1;
+// 		}
 		
-		// allocate new document
-		document * pdoc = new document(length);
+// 		// allocate new document
+// 		document * pdoc = new document(length);
 		
-		for (int j = 0; j < length; j++) {
-		    it = word2id.find(strtok.token(j));
-		    if (it == word2id.end()) {
-				// word not found, i.e., new word
-				pdoc->words[j] = word2id.size();
-				word2id.insert(pair<string, int>(strtok.token(j), word2id.size()));
-		    } else {
-				pdoc->words[j] = it->second;
-		    }
-		}
+// 		for (int j = 0; j < length; j++) {
+// 		    it = word2id.find(strtok.token(j));
+// 		    if (it == word2id.end()) {
+// 				// word not found, i.e., new word
+// 				pdoc->words[j] = word2id.size();
+// 				word2id.insert(pair<string, int>(strtok.token(j), word2id.size()));
+// 		    } else {
+// 				pdoc->words[j] = it->second;
+// 		    }
+// 		}
 		
-		// add new doc to the corpus
-		add_doc(pdoc, i);
-    }
+// 		// add new doc to the corpus
+// 		add_doc(pdoc, i);
+//     }
     
-    fclose(fin);
+//     fclose(fin);
     
-    // write word map to file
-    if (write_wordmap(friendmapfile, &word2id)) {
-		return 1;
-    }
+//     // write word map to file
+//     if (write_wordmap(friendmapfile, &word2id)) {
+// 		return 1;
+//     }
     
-    // update number of words
-    V = word2id.size();
+//     // update number of words
+//     V = word2id.size();
     
-    return 0;
-}
+//     return 0;
+// }

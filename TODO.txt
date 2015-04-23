@@ -4,3 +4,4 @@ Current:
     See if we need to add in another var for L and ??
     - An analagous V?
 
+Fix sampling equations

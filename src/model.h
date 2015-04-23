@@ -66,7 +66,7 @@ public:
     mapid2word id2word; // word map [int => string]
     
     // --- model parameters and variables ---    
-    int M; // dataset size (i.e., number of user documents)
+    int M; // dataset size (i.e., number of users/user documents)
     int V; // vocabulary size
     int K; // number of topics
     double alpha, beta; // LDA hyperparameters 
@@ -74,7 +74,6 @@ public:
     int liter; // the iteration at which the model was saved
     int savestep; // saving period
     int twords; // print out top words per each topic
-    int withrawstrs;
 
     double * p; // temp variable for sampling
     int ** z; // topic assignments for words, size M x doc.size()
@@ -85,15 +84,23 @@ public:
     double ** theta; // theta: document-topic distributions, size M x K
     double ** phi; // phi: topic-word distributions, size K x V
 
-    // --- microblog network variables ---
+    // --- microblog FLDA network variables ---
+    // model parameters
+    int L; // user size (ie number of followers for a given user(??))
+    int N; // number of  
+    double ** sigma; // sigma: topic-follower distributions, size K x M
+
+    // sampling variables
     // Documents are replaced by users in FLDA!
+    int ** x; // topic assignments for users, size L x K
+    int ** y; // binary array for whether user is being followed for content or non-content reasons, size L
     int ** n_lda; // d_z, m, *, *: number of words in user m's document assigned to topic z, for all links, for any reason, size M x K
-    int ** A; // c_x, m, *: topic x assigned to user m
-    int ** B; // d_x, m, *, *: 
+    int ** A; // c_x, m, *: topic x assigned to user m, size M x K
+    int ** B; // d_x, m, *, *: topic x assigned to user m(????), size M x K
     int * C0; // d_*, m, *, 0: size M
     int * C1; // d_*, m, *, 1: size M
     int * D0; // d_*, *, e, 0: 
-    int Dsum; // d_*, *, *, 0:
+    int D0sum; // d_*, *, *, 0:
     int ** D1; // d_x, *, e, 1:
     int * D1sum; // d_x, *, *, 1:
     
@@ -135,7 +142,8 @@ public:
     void estimate();
     void estimate_flda();
     int sampling(int m, int n);
-    int sampling_flda(int m, int l);
+    int sampling_flda_eq1(int m, int n);
+    pair<int, bool> sampling_flda_eq2(int m, int l);
     void compute_theta();
     void compute_phi();
 };
