@@ -166,6 +166,8 @@ int model::init(int argc, char ** argv) {
     if (parse_args(argc, argv)) {
     	return 1;
     }
+
+    // printf("Parse complete\n");
     
     if (model_status == MODEL_STATUS_EST) {
 	// estimating the model from scratch
@@ -512,6 +514,7 @@ void model::compute_phi() {
 }
 
 int model::init_est_flda() {
+    // printf("Begin the FLDA initialization\n");
     int m, n, w, l, k;
 
     p = new double[K];
@@ -533,7 +536,7 @@ int model::init_est_flda() {
     // + allocate memory and assign values for variables
     M = ptrndata->M;
     V = ptrndata->V;
-    L = pfrnddata->docs[m]->length;
+    L = pfrnddata->M;
     // K: from command line or default value
     // alpha, beta: from command line or default values
     // niters, savestep: from command line or default values
@@ -600,7 +603,7 @@ int model::init_est_flda() {
         D1sum[k] = 0;
     }
 
-    printf("Finished initializing matrices!");
+    printf("Finished initializing matrices!\n");
 
     srandom(time(0)); // initialize for random number generation
     z = new int*[M];
@@ -671,7 +674,7 @@ int model::init_est_flda() {
         phi[k] = new double[V];
     }    
 
-    printf("Finished initializing everything!");
+    printf("Finished setting data!\n");
 
     return 0;
 }
@@ -696,8 +699,8 @@ void model::estimate_flda() {
                 // sample from p(z_i|z_-i, w)
                 int topic = sampling_flda_eq1(m, n);
                 z[m][n] = topic;
-                printf("Topic is number %d\n", z[m][n]);
             }
+            printf("Finished sampling Eq1\n");
 
             // FLDA portion of network analysis
             for (int l = 0; l < pfrnddata->docs[m]->length; l++) {

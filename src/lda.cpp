@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
     	show_help();
     	return 1;
     }
-    
+
     if (lda.model_status == MODEL_STATUS_EST) {
     	// parameter estimation
     	lda.estimate();
