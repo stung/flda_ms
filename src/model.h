@@ -94,9 +94,9 @@ public:
     // Documents are replaced by users in FLDA!
     int ** x; // topic assignments for users, size L x K
     int ** y; // binary array for whether user is being followed for content or non-content reasons, size L
-    int ** n_lda; // d_z, m, *, *: number of words in user m's document assigned to topic z, for all links, for any reason, size M x K
-    int ** A; // c_x, m, *: topic x assigned to user m, size M x K
-    int ** B; // d_x, m, *, *: topic x assigned to user m(????), size M x K
+    int ** nl; // d_z, m, *, *: number of words in user m's document assigned to topic z, for all links, for any reason, size M x K
+    // int ** A; // c_x, m, *: topic x assigned to user m, size M x K
+    // int ** B; // d_x, m, *, *: topic x assigned to user m(????), size M x K
     int * C0; // d_*, m, *, 0: size M
     int * C1; // d_*, m, *, 1: size M
     int * D0; // d_*, *, e, 0: 
@@ -143,7 +143,7 @@ public:
     void estimate_flda();
     int sampling(int m, int n);
     int sampling_flda_eq1(int m, int n);
-    pair<int, bool> sampling_flda_eq2(int m, int l);
+    pair<int, int> sampling_flda_eq2(int m, int l);
     void compute_theta();
     void compute_phi();
 };

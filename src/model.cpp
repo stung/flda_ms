@@ -148,9 +148,7 @@ void model::set_default_values() {
     // sampling variables
     x = NULL; 
     y = NULL;
-    n_lda = NULL;
-    A = NULL;
-    B = NULL;
+    nl = NULL;
     C0 = NULL;
     C1 = NULL;
     D0 = NULL;
@@ -569,31 +567,15 @@ int model::init_est_flda() {
 
     // FLDA matrices
     // Eq 1
-    n_lda = new int*[M];
+    nl = new int*[M];
     for (m = 0; m < M; m++) {
-        n_lda[m] = new int[K];
+        nl[m] = new int[K];
         for (k = 0; k < K; k++) {
-            n_lda[m][k] = 0;
+            nl[m][k] = 0;
         }
     }
 
     // Eq 2 and 3
-    A = new int*[M];
-    for (m = 0; m < M; m++) {
-        A[m] = new int[K];
-        for (k = 0; k < K; k++) {
-            A[m][k] = 0;
-        }
-    }
-
-    B = new int*[M];
-    for (m = 0; m < M; m++) {
-        B[m] = new int[K];
-        for (k = 0; k < K; k++) {
-            B[m][k] = 0;
-        }
-    }
-
     C0 = new int[M];
     for (m = 0; m < M; m++) {
         C0[m] = 0;
@@ -651,6 +633,10 @@ int model::init_est_flda() {
             nd[m][topic] += 1;
             // total number of words assigned to topic j
             nwsum[topic] += 1;
+
+            // FLDA
+            // Eq 1
+            nl[m][topic] += 1;
         } 
         // total number of words in document i
         // ndsum[m] = N;      
@@ -665,12 +651,10 @@ int model::init_est_flda() {
             x[m][l] = topic;
             y[m][l] = indicator;
 
-            // Eq 1
-            n_lda[m][topic] += 1;
-
-            // Eq 2
-            A[m][topic] += 1;
-            B[m][topic] += 1;
+            // FLDA
+            // Eq 2 and 3
+            nl[m][topic] += 1;
+            nd[m][topic] += 1;
 
             C0[m] += 1;
             C1[m] += 1;
@@ -678,8 +662,8 @@ int model::init_est_flda() {
             D0[l] += 1;
             D0sum += 1;
 
-            D1[l][k] += 1;
-            D1sum[k] += 1;
+            D1[l][topic] += 1;
+            D1sum[topic] += 1;
         }
     }
     
@@ -722,10 +706,10 @@ void model::estimate_flda() {
 
             // FLDA portion of network analysis
             for (int l = 0; l < pfrnddata->docs[m]->length; l++) {
-                pair<int, bool> samppair;
+                pair<int, int> samppair;
                 samppair = sampling_flda_eq2(m, l);
                 int topic = samppair.first;
-                bool indicator = samppair.second;
+                int indicator = samppair.second;
                 x[m][l] = topic;
                 y[m][l] = indicator;
             }
@@ -764,7 +748,7 @@ int model::sampling_flda_eq1(int m, int n) {
 
     // Equation 1
     for (int k = 0; k < K; k++) {
-        p[k] = ((nd[m][k] + n_lda[m][k] + alpha) * (nw[w][k] + beta)) /
+        p[k] = ((nd[m][k] + nl[m][k] + alpha) * (nw[w][k] + beta)) /
                 (ndsum[m] + Vbeta);
     }
 
@@ -801,9 +785,10 @@ int model::sampling_flda_eq1(int m, int n) {
 }
 
 
-pair<int, bool> model::sampling_flda_eq2(int m, int l) {
+pair<int, int> model::sampling_flda_eq2(int m, int l) {
     // remove z_i from the count variables
-    int topic = z[m][l];
+    int topic = x[m][l];
+    int indicator = y[m][l];
     int w = ptrndata->docs[m]->words[l];
     nw[w][topic] -= 1;
     nd[m][topic] -= 1;
@@ -843,7 +828,7 @@ pair<int, bool> model::sampling_flda_eq2(int m, int l) {
     ndsum[m] += 1;    
     
     // Returns topic(index) that broke on the loop above
-    pair<int, bool> final = make_pair(topic, false);
+    pair<int, bool> final = make_pair(topic, 0);
     return final;
 }
 
