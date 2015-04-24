@@ -559,12 +559,6 @@ int model::init_est_flda() {
        nwsum[k] = 0;
     }
     
-    // This sum over the users/documents may not be needed
-    // ndsum = new int[M];
-    // for (m = 0; m < M; m++) {
-    //    ndsum[m] = 0;
-    // }
-
     // FLDA matrices
     // Eq 1
     nl = new int*[M];
@@ -702,14 +696,15 @@ void model::estimate_flda() {
                 // sample from p(z_i|z_-i, w)
                 int topic = sampling_flda_eq1(m, n);
                 z[m][n] = topic;
+                printf("Topic is number %d\n", z[m][n]);
             }
 
             // FLDA portion of network analysis
             for (int l = 0; l < pfrnddata->docs[m]->length; l++) {
-                pair<int, int> samppair;
-                samppair = sampling_flda_eq2(m, l);
-                int topic = samppair.first;
-                int indicator = samppair.second;
+                pair<int, int> sample_pair;
+                sample_pair = sampling_flda_eq2(m, l);
+                int topic = sample_pair.first;
+                int indicator = sample_pair.second;
                 x[m][l] = topic;
                 y[m][l] = indicator;
             }
@@ -740,7 +735,7 @@ int model::sampling_flda_eq1(int m, int n) {
     int w = ptrndata->docs[m]->words[n];
     nw[w][topic] -= 1;
     nd[m][topic] -= 1;
-    ndsum[m] -= 1;
+    nwsum[topic] -= 1;
 
     double Vbeta = V * beta;
     // double Kalpha = K * alpha;    
@@ -749,7 +744,7 @@ int model::sampling_flda_eq1(int m, int n) {
     // Equation 1
     for (int k = 0; k < K; k++) {
         p[k] = ((nd[m][k] + nl[m][k] + alpha) * (nw[w][k] + beta)) /
-                (ndsum[m] + Vbeta);
+                (nwsum[topic] + Vbeta);
     }
 
     // Why do you add these all up? It becomes a cumulative up-to-k array
@@ -771,14 +766,9 @@ int model::sampling_flda_eq1(int m, int n) {
     }
     
     // add newly estimated z_i to count variables
-    // if (flda) {
-    //     return 1;
-    // } else {
-    //     nw[w][topic] += 1;
-    //     nd[m][topic] += 1;
-    //     nwsum[topic] += 1;
-    //     ndsum[m] += 1;    
-    // }
+    nw[w][topic] += 1;
+    nd[m][topic] += 1;
+    nwsum[topic] += 1;
     
     // Returns topic(index) that broke on the loop above
     return topic;
