@@ -70,6 +70,7 @@ public:
     int V; // vocabulary size
     int K; // number of topics
     double alpha, beta; // LDA hyperparameters 
+    double epsilon, gamma, rho0, rho1; // FLDA hyperparameters
     int niters; // number of Gibbs sampling iterations
     int liter; // the iteration at which the model was saved
     int savestep; // saving period
@@ -87,7 +88,7 @@ public:
     // --- microblog FLDA network variables ---
     // model parameters
     int L; // user size (ie number of followers for a given user(??))
-    int N; // number of  
+    int O; // total number of friends
     double ** sigma; // sigma: topic-follower distributions, size K x M
 
     // sampling variables
@@ -135,17 +136,22 @@ public:
     
     // init for estimation
     int init_est();
-    // init for FLDA estimation
-    int init_est_flda();
 	
     // estimate LDA model using Gibbs sampling
     void estimate();
-    void estimate_flda();
-    int sampling(int m, int n);
-    int sampling_flda_eq1(int m, int n);
-    pair<int, int> sampling_flda_eq2(int m, int l);
     void compute_theta();
     void compute_phi();
+    int sampling(int m, int n);
+
+    // FLDA
+    int init_est_flda();
+    void estimate_flda();
+    int sampling_flda_eq1(int m, int n);
+    // pair<int, int> sampling_flda_eq2(int m, int l);
+    int sampling_flda_eq2(int m, int l);
+    int sampling_flda_eq3(int m, int l);
+    void flda_compute_theta();
+    void flda_compute_phi();
 };
 
 #endif
