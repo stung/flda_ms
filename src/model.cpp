@@ -126,11 +126,11 @@ void model::set_default_values() {
     V = 0;
     K = 100;
     alpha = 50.0 / K;
-    beta = 0.1;
     epsilon = 0.1;
+    beta = 0.1;
     gamma = 0.1;
-    rho0 = 0.1;
-    rho1 = 0.1;
+    rho0 = 50.0 / K;
+    rho1 = 50.0 / K;
     niters = 2000;
     liter = 0;
     savestep = 200;    
@@ -700,17 +700,21 @@ void model::estimate_flda() {
                 int topic = sampling_flda_eq1(m, n);
                 z[m][n] = topic;
             }
-            // printf("Finished sampling Eq1\n");
 
             // FLDA portion of network analysis
             for (int l = 0; l < pfrnddata->docs[m]->length; l++) {
-                // int topic = sampling_flda_eq2(m, l);
-                int topic = sampling_flda_eq3(m, l);
-
-                x[m][l] = topic;
+                if (y[m][l]) {
+                    // y = 1
+                    int topic = sampling_flda_eq3(m, l);
+                    x[m][l] = topic;
+                } else {
+                    // y = 0
+                    int topic = sampling_flda_eq2(m, l);
+                    x[m][l] = topic;
+                }
                 // y[m][l] = indicator;
+                // ..how do I change the initial values of y[m][l]?
             }
-            // printf("Finished sampling Eq2\n");
         }
         
         if (savestep > 0) {
