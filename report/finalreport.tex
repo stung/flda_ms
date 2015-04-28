@@ -128,17 +128,14 @@ As the number of topics is manually specified by the user, this operation's spac
   \label{fig:topicmodel}
 \end{figure}
 
-LDA distinguishes itself from other probabilistic topic model by including a \textit{Dirichlet prior} on the $\theta$ parameter. The use of a prior allows for the algorithm to make a general assumption about how its weights are generated, based on the total number of topics chosen \cite{hoffman}. As the Dirichlet distribution is a conjugate prior for the multinomial distribution, this means that the posterior distribution will also be a Dirichlet. In addition, it is relatively simple to sample from the Dirichlet distribution. While a detailed explanation of conjugate priors is outside of the scope of this paper, we will turn our focus instead to the portions that will allow us to implement LDA \cite{lda}. It is sufficient to know that the Dirichlet distribution is used to model the multinomial distribution of $\theta$, and the parameters of the Dirichlet distribution are known as \textit{hyperparameters}, distinguishing them from the parameters $\theta$ and $\phi$ of the underlying distribution. In our situation, each hyperparameter $\alpha_j$ from $\alpha_1, ..., \alpha_T$ represents the initial, prior count for the number of times topic $j$ was sampled in a document. It is important to remember that this occurs before we have even begun the actual sampling process.
+LDA distinguishes itself from other probabilistic topic model by including a \textit{Dirichlet prior} on the $\theta$ parameter. The use of a prior allows for the algorithm to make a general assumption about how its weights are generated, based on the total number of topics chosen \cite{hoffman}. As the Dirichlet distribution is a conjugate prior for the multinomial distribution, this means that the posterior distribution will also be a Dirichlet. In addition, it is relatively simple to sample from the Dirichlet distribution. While a detailed explanation of conjugate priors is outside of the scope of this paper, we will turn our focus instead to the portions that will allow us to implement LDA \cite{lda}. It is sufficient to know that the Dirichlet distribution is used to model the multinomial distribution of $\theta$, and the parameters of the Dirichlet distribution are known as \textit{hyperparameters}, distinguishing them from the parameters $\theta$ and $\phi$ of the underlying distribution. In our situation, each hyperparameter $\alpha_j$ from $\alpha_1, ..., \alpha_T$ represents the initial, prior count for the number of times topic $j$ was sampled in a document. A similar hyperparameter $\beta$ is assigned to model $\phi$ as well, representing the prior count for the number of times a word was sampled from a topic. It is important to remember that this occurs before we have even begun the actual sampling process.
 
 \subsection{Gibbs Sampling}
-As mentioned in the previous section, one of the reasons a Dirichlet prior is included is because it is simple to sample from a Dirichlet distribution. While it is possible to directly estimate the parameters $\theta$ and $\phi$, this has a tendency of converging on local maxima, leading to results that may differ wildly from run to run \cite{hoffman}. Instead, LDA 
+As mentioned in the previous section, one of the reasons a Dirichlet prior is included is because it is simple to sample from a Dirichlet distribution. While it is possible to directly estimate the parameters $\theta$ and $\phi$, this has a tendency of converging on local maxima, leading to results that may differ wildly from run to run \cite{hoffman}. Instead, LDA takes all of the observed words in the corpus, $w$, and uses them to create the posterior distribution of $z$, which we define as the topic assigned to each word. For each $w_i$, a topic (represented by an integer value from $1, ..., T$) $z_i$ is assigned to it. When it comes to dealing with a corpus that includes millions of words, Gibbs sampling is an efficient and simple method of achieving our goals in a reasonable time frame \cite{lda}.
 
-Gibbs sampling utilizes \textit{Markov Chain Monte Carlo} (MCMC), which builds its next response 
+Gibbs sampling utilizes \textit{Markov Chain Monte Carlo} (MCMC), which builds its next response based on the results of the previous iteration. This process continues until the requisite number of iterations has been fulfilled (as manually specified by the user), or when the results have converged and do not vary drastically from iteration to iteration. As this procedure does not directly estimate the values of $\theta$ and $\phi$, they can be estimated once $z$ has converged.
 
-it is necessary to sample from the distribution 
-
-
-
+Equation \ref{eq:lda_gibbsamp} shows one such example of a Gibbs sampling equation, given by Griffiths and Steyvers \cite{griff}.
 
 \begin{equation}\label{eq:lda_gibbsamp}
   P(z_i = j | z_{-i}, w_i, d_i, \cdot) \propto
@@ -147,16 +144,16 @@ it is necessary to sample from the distribution
     (\frac{C_{d_ij}^{DT} + \alpha}
     {\sum\limits^T_{t = 1} C_{d_ij}^{DT} + T\alpha})
 \end{equation}
-Equation \ref{eq:lda_gibbsamp} shows one such example of a Gibbs sampling equation, given by Griffiths and Steyvers \cite{griff}
 
 \cite{lda}
 
 \subsection{Previous Work on FLDA}
-The primary source of information came from Professor John Cho's paper on FLDA \cite{flda}. 
+The primary source of information came from Bi et al's paper on FLDA \cite{flda}. 
 
 To solve this, a group of researchers proposed a new LDA model - one that could take into account these connections from the Twitter network. This is known as Followship-LDA (FLDA)
 
 The Gibbs sampling equations for FLDA have also been tweaked to 
+The notation used to represent our matrices in these equations are as follows: $c_{z, m, w}$ is a 3D matrix that represents the number of times word $w$ was assigned to topic $z$ for user $m$, and $d_{x, m, e, y}$ is a 4D matrix that represents the number of times link $e$ was assigned to topic $x$ by user $m$, given the content indicator $y$ (remember that if $y$ is $0$, then user $m$ is following link $e$ for non-content reasons, and if $y$ is $1$, then the link is followed for content reasons).
 \begin{equation}\label{eq:flda_sem}
   \begin{gathered}
     p(z_{m, n} | z_{-(m, n)}, x, w, e, y, \alpha, \beta, \gamma, \epsilon, \rho) \propto \\
@@ -184,23 +181,17 @@ The Gibbs sampling equations for FLDA have also been tweaked to
   \end{gathered}
 \end{equation}
 
-blah blah Equation \ref{eq:flda_sem}
-
 
 %%%%%%%%%%%%%%%%%%%%%%%% Section 3: System Design and Approaches%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{System Design and Approaches}
 \label{sec:approach}
 \subsection{System Architecture Overview}
-Given that LDA is already a well known model, there are many existing open source implementations readily available. I chose to use the gibbsLDA \verb!C++! implementation \cite{gibbs_lda}, understand the code, and use that as a baseline from which to extend and model the followship network analysis from. 
-
-To narrow the scope of my project, I decided to focus only on implementing a working version of the FLDA described in 
-
-Having defined the scope of my project, I located an implementation of  \cite{gibbs_lda}
+Given that LDA is already a well known model, there are many existing open source implementations readily available. I chose to use the gibbsLDA \verb!C++! implementation \cite{gibbs_lda}, understand the code, and use that as a baseline from which to extend and model the followship network analysis from. To narrow the scope of my project, I decided to focus only on implementing a working version of the FLDA described in Bi's paper \cite{flda}.
 
 To represent the 3D and 4D matrices $c_{z, m, w}$ and $d_{x, m, e, y}$ respectively, multiple 1D and 2D arrays were used. These arrays aggregate the entries in the unrepresented dimension(s), thereby reducing the dimensions of a very large matrix. This greatly increases the speed at which the algorithm can run, though at the obvious cost of requiring more space to store redundant information.
 
 \subsection{Data Sources}
-Twitter was chosen as the microblog in question.
+Twitter was chosen as the microblog in question. While the original Twitter data used is 8 GB large, a much smaller subset weighing in at about 100MB was used to test the algorithm.
 
 \subsection{Data Cleaning and Challenges}
 I obtained the data from Zijun, which he described as a subset of the 
@@ -229,8 +220,8 @@ As Spark comes with built in Java support, it would have required a different ap
 \subsection{Programming Languages}
 Two programming languages were used in this project:
 \begin{enumerate}
-\item \textbf{Python}: 
-\item \textbf{C++}: 
+\item \textbf{Python}: This was used to process the Twitter dataset. The corpus information from the tweets was organized, as well as the friend network information. Extraneous words and words from other languages were also filtered out, to the best of my ability.
+\item \textbf{C++}: This was used to do all of the algorithmic work for FLDA, such as initialization, sampling, and estimation of the final variables. The Gibbs LDA source code in C++ was used as a starting point for the FLDA functions.
 \end{enumerate}
 
 % \end{multicols}

@@ -90,6 +90,8 @@ public:
     int L; // user size (ie number of followers for a given user(??))
     int O; // total number of friends
     double ** sigma; // sigma: topic-follower distributions, size K x M
+    double ** mu; // mu: , size K x M
+    double ** pi; // pi: , size K x M
 
     // sampling variables
     // Documents are replaced by users in FLDA!
@@ -152,6 +154,9 @@ public:
     int sampling_flda_eq3(int m, int l);
     void flda_compute_theta();
     void flda_compute_phi();
+    void flda_compute_sigma();
+    void flda_compute_mu();
+    void flda_compute_pi();
 };
 
 #endif
