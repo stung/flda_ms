@@ -82,6 +82,7 @@ public:
     int ** nd; // na[i][j]: number of words in document i assigned to topic j, over all words, size M x K
     int * nwsum; // nwsum[j]: total number of words assigned to topic j, size K
     int * ndsum; // nasum[i]: total number of words in document i, size M
+    int * nlsum; // nlsum[i]: total number of friends following person i, size M
     double ** theta; // theta: document-topic distributions, size M x K
     double ** phi; // phi: topic-word distributions, size K x V
 
@@ -89,9 +90,9 @@ public:
     // model parameters
     int L; // user size (ie number of followers for a given user(??))
     int O; // total number of friends
-    double ** sigma; // sigma: topic-follower distributions, size K x M
-    double ** mu; // mu: , size K x M
-    double ** pi; // pi: , size K x M
+    double ** mu; // mu: , size M x 2
+    double ** sigma; // sigma: topic-follower distributions, size K x O
+    double * pi; // pi: , size O
 
     // sampling variables
     // Documents are replaced by users in FLDA!

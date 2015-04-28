@@ -564,6 +564,18 @@ int model::init_est_flda() {
     for (k = 0; k < K; k++) {
        nwsum[k] = 0;
     }
+
+    //------- FLDA TESTING ---------
+    ndsum = new int[M];
+    for (m = 0; m < M; m++) {
+       ndsum[m] = 0;
+    }
+
+    nlsum = new int[M];
+    for (l = 0; l < L; l++) {
+       nlsum[m] = 0;
+    }
+    // MAY BE REMOVED
     
     // FLDA matrices
     // Eq 1
@@ -638,7 +650,7 @@ int model::init_est_flda() {
             nl[m][topic] += 1;
         } 
         // total number of words in document i
-        // ndsum[m] = N;      
+        ndsum[m] = N;      
 
         for (f = 0; f < F; f++) {
             int topic = (int)(((double)random() / RAND_MAX) * K);
@@ -664,6 +676,8 @@ int model::init_est_flda() {
             D1[pfrnddata->docs[m]->words[f]][topic] += 1;
             D1sum[topic] += 1;
         }
+        // total number of friends following person m
+        nlsum[m] = F;
     }
     
     theta = new double*[M];
@@ -675,6 +689,18 @@ int model::init_est_flda() {
     for (k = 0; k < K; k++) {
         phi[k] = new double[V];
     }    
+
+    mu = new double*[M];
+    for (m = 0; m < M; m++) {
+        mu[m] = new double[2];
+    }    
+
+    sigma = new double*[K];
+    for (k = 0; k < K; k++) {
+        sigma[k] = new double[O];
+    }    
+
+    pi = new double[O];
 
     return 0;
 }
@@ -712,7 +738,6 @@ void model::estimate_flda() {
                     int topic = sampling_flda_eq2(m, l);
                     x[m][l] = topic;
                 }
-                // y[m][l] = indicator;
                 // ..how do I change the initial values of y[m][l]?
             }
         }
@@ -731,6 +756,7 @@ void model::estimate_flda() {
     printf("Gibbs sampling completed!\n");
     printf("Saving the final model!\n");
     flda_compute_theta();
+    // compute_theta();
     flda_compute_phi();
     liter--;
     save_model(utils::generate_model_name(-1));
@@ -751,6 +777,7 @@ int model::sampling_flda_eq1(int m, int n) {
     for (int k = 0; k < K; k++) {
         p[k] = ((nd[m][k] + nl[m][k] + alpha) * (nw[w][k] + beta)) /
                 (nwsum[topic] + Vbeta);
+                // ((ndsum[m] + nlsum[m] + K * alpha) * (nwsum[topic] + Vbeta));
     }
 
     // Why do you add these all up? It becomes a cumulative up-to-k array
@@ -879,7 +906,7 @@ int model::sampling_flda_eq3(int m, int l) {
 
 void model::flda_compute_theta() {
     ndsum = new int[M];
-    int * nlsum = new int[M];
+    nlsum = new int[M];
     for (int m = 0; m < M; m++) {
         for (int k = 0; k < K; k++) {
             ndsum[m] += nd[m][k];
@@ -897,4 +924,29 @@ void model::flda_compute_theta() {
 
 void model::flda_compute_phi() {
     compute_phi();
+}
+
+void model::flda_compute_mu() {
+    for (int m = 0; m < M; m++) {
+        mu[m][0] = (C0[m] + rho0) / 
+                    (C0[m] + C1[m] + rho0 + rho1);
+        mu[m][1] = (C1[m] + rho1) / 
+                    (C0[m] + C1[m] + rho0 + rho1);
+    }
+}
+
+void model::flda_compute_sigma() {
+    for (int k = 0; k < K; k++) {
+        for (int o = 0; o < O; o++) {
+            sigma[k][o] = (D1[o][k] + gamma) / 
+                            (D1sum[k] + M * gamma);
+        }
+    }
+}
+
+void model::flda_compute_pi() {
+    for (int o = 0; o < O; o++) {
+        pi[o] = (D0[o] + epsilon) /
+                    (D0sum + M * epsilon);
+    }
 }
