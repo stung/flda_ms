@@ -77,12 +77,13 @@ public:
     int twords; // print out top words per each topic
 
     double * p; // temp variable for sampling
+    double * q; // temp variable for sampling
+    double * r; // temp variable for sampling
     int ** z; // topic assignments for words, size M x doc.size()
     int ** nw; // cwt[i][j]: number of instances of word/term i assigned to topic j, over all users, size V x K
     int ** nd; // na[i][j]: number of words in document i assigned to topic j, over all words, size M x K
     int * nwsum; // nwsum[j]: total number of words assigned to topic j, size K
     int * ndsum; // nasum[i]: total number of words in document i, size M
-    int * nlsum; // nlsum[i]: total number of friends following person i, size M
     double ** theta; // theta: document-topic distributions, size M x K
     double ** phi; // phi: topic-word distributions, size K x V
 
@@ -90,15 +91,13 @@ public:
     // model parameters
     int L; // user size (ie number of followers for a given user(??))
     int O; // total number of friends
-    double ** mu; // mu: , size M x 2
-    double ** sigma; // sigma: topic-follower distributions, size K x O
-    double * pi; // pi: , size O
 
     // sampling variables
     // Documents are replaced by users in FLDA!
     int ** x; // topic assignments for users, size L x K
     int ** y; // binary array for whether user is being followed for content or non-content reasons, size L
     int ** nl; // d_z, m, *, *: number of words in user m's document assigned to topic z, for all links, for any reason, size M x K
+    int * nlsum; // nlsum[i]: total number of friends following person i, size M
     // int ** A; // c_x, m, *: topic x assigned to user m, size M x K
     // int ** B; // d_x, m, *, *: topic x assigned to user m(????), size M x K
     int * C0; // d_*, m, *, 0: size M
@@ -107,11 +106,14 @@ public:
     int D0sum; // d_*, *, *, 0:
     int ** D1; // d_x, *, e, 1:
     int * D1sum; // d_x, *, *, 1:
+    double ** mu; // mu: , size M x 2
+    double ** sigma; // sigma: topic-follower distributions, size K x O
+    double * pi; // pi: , size O
     
     // --------------------------------------
     
     model() {
-	set_default_values();
+    	set_default_values();
     }
           
     ~model();
@@ -151,8 +153,9 @@ public:
     void estimate_flda();
     int sampling_flda_eq1(int m, int n);
     // pair<int, int> sampling_flda_eq2(int m, int l);
-    int sampling_flda_eq2(int m, int l);
-    int sampling_flda_eq3(int m, int l);
+    int sampling_flda_eqs23(int m, int l);
+    // int sampling_flda_eq2(int m, int l);
+    // int sampling_flda_eq3(int m, int l);
     void flda_compute_theta();
     void flda_compute_phi();
     void flda_compute_sigma();

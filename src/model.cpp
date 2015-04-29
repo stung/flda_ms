@@ -42,65 +42,149 @@ using namespace std;
 
 model::~model() {
     if (p) {
-	delete p;
+    	delete p;
+    }
+
+    if (q) {
+        delete q;
+    }
+
+    if (r) {
+        delete r;
     }
 
     if (ptrndata) {
-	delete ptrndata;
+    	delete ptrndata;
+    }
+
+    if (pfrnddata) {
+        delete pfrnddata;
     }
     
     if (pnewdata) {
-	delete pnewdata;
+    	delete pnewdata;
     }
 
     if (z) {
-	for (int m = 0; m < M; m++) {
-	    if (z[m]) {
-		delete z[m];
-	    }
-	}
+    	for (int m = 0; m < M; m++) {
+    	    if (z[m]) {
+        		delete z[m];
+    	    }
+    	}
     }
     
     if (nw) {
-	for (int w = 0; w < V; w++) {
-	    if (nw[w]) {
-		delete nw[w];
-	    }
-	}
+    	for (int w = 0; w < V; w++) {
+    	    if (nw[w]) {
+        		delete nw[w];
+    	    }
+    	}
     }
 
     if (nd) {
-	for (int m = 0; m < M; m++) {
-	    if (nd[m]) {
-		delete nd[m];
-	    }
-	}
+    	for (int m = 0; m < M; m++) {
+    	    if (nd[m]) {
+        		delete nd[m];
+    	    }
+    	}
     } 
     
     if (nwsum) {
-	delete nwsum;
+    	delete nwsum;
     }   
     
     if (ndsum) {
-	delete ndsum;
+    	delete ndsum;
     }
     
     if (theta) {
-	for (int m = 0; m < M; m++) {
-	    if (theta[m]) {
-		delete theta[m];
-	    }
-	}
+    	for (int m = 0; m < M; m++) {
+    	    if (theta[m]) {
+        		delete theta[m];
+    	    }
+    	}
     }
     
     if (phi) {
-	for (int k = 0; k < K; k++) {
-	    if (phi[k]) {
-		delete phi[k];
-	    }
-	}
+    	for (int k = 0; k < K; k++) {
+    	    if (phi[k]) {
+        		delete phi[k];
+    	    }
+    	}
     }
 
+    // FLDA Vars
+    if (x) {
+        for (int m = 0; m < M; m++) {
+            if (x[m]) {
+                delete x[m];
+            }
+        }
+    }
+
+    if (y) {
+        for (int m = 0; m < M; m++) {
+            if (y[m]) {
+                delete y[m];
+            }
+        }
+    }
+
+    if (nl) {
+        for (int m = 0; m < M; m++) {
+            if (nl[m]) {
+                delete nl[m];
+            }
+        }
+    }
+
+    if (nlsum) {
+        delete nlsum;
+    }
+
+    if (C0) {
+        delete C0;
+    }
+
+    if (C1) {
+        delete C1;
+    }
+
+    if (D0) {
+        delete D0;
+    }
+
+    if (D1) {
+        for (int o = 0; o < O; o++) {
+            if (D1[o]) {
+                delete D1[o];
+            }
+        }
+    }
+
+    if (D1sum) {
+        delete D1sum;
+    }
+
+    if (mu) {
+        for (int m = 0; m < M; m++) {
+            if (mu[m]) {
+                delete mu[m];
+            }
+        }
+    }
+    
+    if (sigma) {
+        for (int k = 0; k < K; k++) {
+            if (sigma[k]) {
+                delete sigma[k];
+            }
+        }
+    }
+
+    if (pi) {
+        delete pi;
+    }
 }
 
 void model::set_default_values() {
@@ -129,14 +213,16 @@ void model::set_default_values() {
     epsilon = 0.1;
     beta = 0.1;
     gamma = 0.1;
-    rho0 = 50.0 / K;
-    rho1 = 50.0 / K;
+    rho0 = 1;
+    rho1 = 1;
     niters = 2000;
     liter = 0;
     savestep = 200;    
     twords = 0;
     
     p = NULL;
+    q = NULL;
+    r = NULL;
     z = NULL;
     nw = NULL;
     nd = NULL;
@@ -520,6 +606,8 @@ int model::init_est_flda() {
     int m, n, w, l, k, f, o;
 
     p = new double[K];
+    q = new double[K];
+    r = new double[2 * K];
 
     // + read training data
     ptrndata = new dataset;
@@ -726,20 +814,24 @@ void model::estimate_flda() {
                 int topic = sampling_flda_eq1(m, n);
                 z[m][n] = topic;
             }
+            // printf("Finished eqn1 for person %d\n", m);
 
             // FLDA portion of network analysis
             for (int l = 0; l < pfrnddata->docs[m]->length; l++) {
-                if (y[m][l]) {
-                    // y = 1
-                    int topic = sampling_flda_eq3(m, l);
-                    x[m][l] = topic;
-                } else {
-                    // y = 0
-                    int topic = sampling_flda_eq2(m, l);
-                    x[m][l] = topic;
-                }
+                int topic = sampling_flda_eqs23(m, l);
+                x[m][l] = topic;
+                // if (y[m][l]) {
+                //     // y = 1
+                //     int topic = sampling_flda_eq3(m, l);
+                //     x[m][l] = topic;
+                // } else {
+                //     // y = 0
+                //     int topic = sampling_flda_eq2(m, l);
+                //     x[m][l] = topic;
+                // }
                 // ..how do I change the initial values of y[m][l]?
             }
+            // printf("Finished eqns23 for person %d\n", m);
         }
         
         if (savestep > 0) {
@@ -756,8 +848,9 @@ void model::estimate_flda() {
     printf("Gibbs sampling completed!\n");
     printf("Saving the final model!\n");
     flda_compute_theta();
-    // compute_theta();
+    // printf("Finished theta!\n");
     flda_compute_phi();
+    // printf("Finished phi!\n");
     liter--;
     save_model(utils::generate_model_name(-1));
 }
@@ -776,8 +869,8 @@ int model::sampling_flda_eq1(int m, int n) {
     // Equation 1
     for (int k = 0; k < K; k++) {
         p[k] = ((nd[m][k] + nl[m][k] + alpha) * (nw[w][k] + beta)) /
-                (nwsum[topic] + Vbeta);
-                // ((ndsum[m] + nlsum[m] + K * alpha) * (nwsum[topic] + Vbeta));
+                (nwsum[k] + Vbeta);
+                // ((ndsum[m] + nlsum[m] + K * alpha) * (nwsum[k] + Vbeta));
     }
 
     // Why do you add these all up? It becomes a cumulative up-to-k array
@@ -807,42 +900,66 @@ int model::sampling_flda_eq1(int m, int n) {
     return topic;
 }
 
-// pair<int, int> model::sampling_flda_eq2(int m, int l) {
-int model::sampling_flda_eq2(int m, int l) {
+int model::sampling_flda_eqs23(int m, int l) {
     // remove x_i and y_i from the count variables
     int topic = x[m][l];
-    // int indicator = y[m][l];
     int e = pfrnddata->docs[m]->words[l];
 
     nl[m][topic] -= 1;
+
+    // Eqn 2
     C0[m] -= 1;
     D0[e] -= 1;
     D0sum -= 1;
-
     double Mepsilon = M * epsilon;
+
+    // Eqn 3
+    C1[m] -= 1;
+    D1[e][topic] -= 1;
+    D1sum[topic] -= 1;
+    double Mgamma = M * gamma;
 
     // do multinomial sampling via cumulative method
     for (int k = 0; k < K; k++) {
-        p[k] = ((nd[m][topic] + nl[m][topic] + alpha) * (C0[m] + rho0) * 
+        // Eqn2
+        p[k] = ((nd[m][k] + nl[m][k] + alpha) * (C0[m] + rho0) * 
                 (D0[e] + epsilon)) / (D0sum + Mepsilon);
+        r[k] = p[k];
+
+        // Eqn3
+        q[k] = ((nd[m][k] + nl[m][k] + alpha) * (C1[m] + rho1) * 
+                (D1[e][k] + gamma)) / (D1sum[k] + Mgamma);
+        r[K + k] = q[k];
     }
 
     // Why do you add these all up? It becomes a cumulative up-to-k array
     // cumulate multinomial parameters
-    for (int k = 1; k < K; k++) {
-       p[k] += p[k - 1];
+    for (int k = 1; k < 2 * K; k++) {
+        r[k] += r[k - 1];
     }
 
     // Creates a random number that's smaller than all of the numbers together
     // scaled sample because of unnormalized p[]
-    double u = ((double)random() / RAND_MAX) * p[K - 1];
+    double u = ((double)random() / RAND_MAX) * r[(2 * K) - 1];
     
     // The topic with the highest probability will have the largest range
     // The random u from above will be most likely to fall under this topic
-    for (topic = 0; topic < K; topic++) {
-        if (p[topic] > u) {
+    for (topic = 0; topic < 2 * K; topic++) {
+        if (r[topic] > u) {
             break;
         }
+    }
+
+    // If the topic fell in the first half, that was the realm of Eqn2
+    // and therefore y = 0
+    // Else, second half would be Eqn 3 and therefore y = 1
+    if (topic < K) {
+        y[m][l] = 0;
+    } else {
+        // If sampled topic is greater than K
+        // Need to adjust for indexing purposes
+        topic = topic - K;
+        y[m][l] = 1;
     }
     
     // add newly estimated z_i to count variables
@@ -851,58 +968,109 @@ int model::sampling_flda_eq2(int m, int l) {
     D0[e] += 1;
     D0sum += 1;
     
-    // Returns topic(index) that broke on the loop above
-    // pair<int, int> final = make_pair(topic, 0);
-    return topic;
-}
-
-int model::sampling_flda_eq3(int m, int l) {
-    // remove x_i and y_i from the count variables
-    int topic = x[m][l];
-    // int indicator = y[m][l];
-    int e = pfrnddata->docs[m]->words[l];
-
-    nl[m][topic] -= 1;
-    C1[m] -= 1;
-    D1[e][topic] -= 1;
-    D1sum[topic] -= 1;
-
-    double Mgamma = M * gamma;
-
-    // do multinomial sampling via cumulative method
-    for (int k = 0; k < K; k++) {
-        p[k] = ((nd[m][topic] + nl[m][topic] + alpha) * (C1[m] + rho1) * 
-                (D1[e][topic] + gamma)) / (D1sum[topic] + Mgamma);
-    }
-
-    // Why do you add these all up? It becomes a cumulative up-to-k array
-    // cumulate multinomial parameters
-    for (int k = 1; k < K; k++) {
-       p[k] += p[k - 1];
-    }
-
-    // Creates a random number that's smaller than all of the numbers together
-    // scaled sample because of unnormalized p[]
-    double u = ((double)random() / RAND_MAX) * p[K - 1];
-    
-    // The topic with the highest probability will have the largest range
-    // The random u from above will be most likely to fall under this topic
-    for (topic = 0; topic < K; topic++) {
-        if (p[topic] > u) {
-            break;
-        }
-    }
-    
-    // add newly estimated z_i to count variables
-    nl[m][topic] += 1;
     C1[m] += 1;
     D1[e][topic] += 1;
     D1sum[topic] += 1;
-    
+
     // Returns topic(index) that broke on the loop above
-    // pair<int, int> final = make_pair(topic, 0);
     return topic;
 }
+
+// pair<int, int> model::sampling_flda_eq2(int m, int l) {
+// int model::sampling_flda_eq2(int m, int l) {
+//     // remove x_i and y_i from the count variables
+//     int topic = x[m][l];
+//     int e = pfrnddata->docs[m]->words[l];
+
+//     nl[m][topic] -= 1;
+//     C0[m] -= 1;
+//     D0[e] -= 1;
+//     D0sum -= 1;
+
+//     double Mepsilon = M * epsilon;
+
+//     // do multinomial sampling via cumulative method
+//     for (int k = 0; k < K; k++) {
+//         p[k] = ((nd[m][topic] + nl[m][topic] + alpha) * (C0[m] + rho0) * 
+//                 (D0[e] + epsilon)) / (D0sum + Mepsilon);
+//     }
+
+//     // Why do you add these all up? It becomes a cumulative up-to-k array
+//     // cumulate multinomial parameters
+//     for (int k = 1; k < K; k++) {
+//         p[k] += p[k - 1];
+//     }
+
+//     // Creates a random number that's smaller than all of the numbers together
+//     // scaled sample because of unnormalized p[]
+//     double u = ((double)random() / RAND_MAX) * p[K - 1];
+    
+//     // The topic with the highest probability will have the largest range
+//     // The random u from above will be most likely to fall under this topic
+//     for (topic = 0; topic < K; topic++) {
+//         if (p[topic] > u) {
+//             break;
+//         }
+//     }
+    
+//     // add newly estimated z_i to count variables
+//     nl[m][topic] += 1;
+//     C0[m] += 1;
+//     D0[e] += 1;
+//     D0sum += 1;
+    
+//     // Returns topic(index) that broke on the loop above
+//     // pair<int, int> final = make_pair(topic, 0);
+//     // y[m][l] = y[m][];
+//     return topic;
+// }
+
+// int model::sampling_flda_eq3(int m, int l) {
+//     // remove x_i and y_i from the count variables
+//     int topic = x[m][l];
+//     int e = pfrnddata->docs[m]->words[l];
+
+//     nl[m][topic] -= 1;
+//     C1[m] -= 1;
+//     D1[e][topic] -= 1;
+//     D1sum[topic] -= 1;
+
+//     double Mgamma = M * gamma;
+
+//     // do multinomial sampling via cumulative method
+//     for (int k = 0; k < K; k++) {
+//         p[k] = ((nd[m][topic] + nl[m][topic] + alpha) * (C1[m] + rho1) * 
+//                 (D1[e][topic] + gamma)) / (D1sum[topic] + Mgamma);
+//     }
+
+//     // Why do you add these all up? It becomes a cumulative up-to-k array
+//     // cumulate multinomial parameters
+//     for (int k = 1; k < K; k++) {
+//        p[k] += p[k - 1];
+//     }
+
+//     // Creates a random number that's smaller than all of the numbers together
+//     // scaled sample because of unnormalized p[]
+//     double u = ((double)random() / RAND_MAX) * p[K - 1];
+    
+//     // The topic with the highest probability will have the largest range
+//     // The random u from above will be most likely to fall under this topic
+//     for (topic = 0; topic < K; topic++) {
+//         if (p[topic] > u) {
+//             break;
+//         }
+//     }
+    
+//     // add newly estimated z_i to count variables
+//     nl[m][topic] += 1;
+//     C1[m] += 1;
+//     D1[e][topic] += 1;
+//     D1sum[topic] += 1;
+    
+//     // Returns topic(index) that broke on the loop above
+//     // pair<int, int> final = make_pair(topic, 0);
+//     return topic;
+// }
 
 void model::flda_compute_theta() {
     ndsum = new int[M];
