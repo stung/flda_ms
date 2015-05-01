@@ -135,9 +135,9 @@ As mentioned in the previous section, one of the reasons a Dirichlet prior is in
 
 Gibbs sampling utilizes \textit{Markov Chain Monte Carlo} (MCMC), which builds its next response based on the results of the previous iteration. This process continues until the requisite number of iterations has been fulfilled (as manually specified by the user), or when the results have converged and do not vary drastically from iteration to iteration. As this procedure does not directly estimate the values of $\theta$ and $\phi$, they can be estimated once $z$ has converged.
 
-Equation \ref{eq:lda_gibbsamp} shows one such example of a Gibbs sampling equation, given by Griffiths and Steyvers \cite{griff}.
+Equation \ref{eq:lda_gibbssamp} shows one such example of a Gibbs sampling equation, given by Griffiths and Steyvers \cite{griff}.
 
-\begin{equation}\label{eq:lda_gibbsamp}
+\begin{equation}\label{eq:lda_gibbssamp}
   P(z_i = j | z_{-i}, w_i, d_i, \cdot) \propto
     (\frac{C_{w_ij}^{WT} + \beta}
     {\sum\limits^W_{w = 1} C_{wj}^{WT} + W\beta})
@@ -145,15 +145,48 @@ Equation \ref{eq:lda_gibbsamp} shows one such example of a Gibbs sampling equati
     {\sum\limits^T_{t = 1} C_{d_ij}^{DT} + T\alpha})
 \end{equation}
 
-\cite{lda}
+The terms $C_{wj}^{WT}$ and $C_{dj}^{DT}$ denote the two count matrices used for inferring the parameters. They represent the number of times word $w$ is assigned to topic $j$, and the number of times topic $j$ was assigned to a word in document $d$, respectively. Note that both matrices exclude the current instance $i$ - this is to remove the influence of the current instance on the total distribution when sampling for a new topic for that specific instance. All of the other terms in Equation \ref{eq:lda_gibbssamp} have previously been introduced - the ``$\cdot$'' notation represents all other known variables, which are unchanged \cite{lda}.
 
-\subsection{Previous Work on FLDA}
-The primary source of information came from Bi et al's paper on FLDA \cite{flda}. 
+As one can see, the premise of the sampling equation works by checking both how likely a given word is for a topic, as well as how dominant a given topic is in a document. The left side of the equation checks the probability of the word in the topic against all of the other words in the topic, while the right side of the equation checks the given topic against the other topics in the document. While we intialize these count matrices randomly, given enough iterations, words that show up consistently in the same document will begin to converge in topic groups, which will influence the topic distribution of that document, as well as the word distribution of the topics too. This will decrease the irrelevant topic assignments while increasing the number of relevant groupings over time \cite{lda}.
 
-To solve this, a group of researchers proposed a new LDA model - one that could take into account these connections from the Twitter network. This is known as Followship-LDA (FLDA)
+As such, we can also estimate our $\phi$ and $\theta$ variables by splitting the sampling equation in those two respective parts. Recall that our Gibbs sampling equation, Equation \ref{eq:lda_gibbssamp}, only provides an estimate for $z$, the probability that topic $j$ is sampled for a given word $w_i$. What is usually of greater interest are the topic probability distributions, $\phi$ and $\theta$. Equation \ref{eq:lda_phi} utilizes the topic-word count matrix $C_{wj}^{WT}$ to obtain the topic-word probability distribution, and Equation \ref{eq:lda_theta} utilizes the document-topic count matrix $C_{dj}^{DT}$ to obtain the document-topic probability distribution \cite{lda}.
 
-The Gibbs sampling equations for FLDA have also been tweaked to 
-The notation used to represent our matrices in these equations are as follows: $c_{z, m, w}$ is a 3D matrix that represents the number of times word $w$ was assigned to topic $z$ for user $m$, and $d_{x, m, e, y}$ is a 4D matrix that represents the number of times link $e$ was assigned to topic $x$ by user $m$, given the content indicator $y$ (remember that if $y$ is $0$, then user $m$ is following link $e$ for non-content reasons, and if $y$ is $1$, then the link is followed for content reasons).
+\begin{equation}\label{eq:lda_phi}
+  \phi'^{(j)}_i = (\frac{C_{w_ij}^{WT} + \beta}
+  {\sum\limits^W_{w = 1} C_{wj}^{WT} + W\beta})
+\end{equation}
+
+\begin{equation}\label{eq:lda_theta}
+  \theta'^{(d)}_j = (\frac{C_{d_ij}^{DT} + \alpha}
+  {\sum\limits^T_{t = 1} C_{d_ij}^{DT} + T\alpha})
+\end{equation}
+
+Once these distributions have been estimated from our sampled $z$, we are able to provide a list of topics, along with the words that have the highest likelihoods of being in each topic, which should all have some relation to one another. This is the basic essence of the semantic analysis method LDA.
+
+\subsection{FLDA}
+FLDA extends this LDA model by incorporating an analysis on the microblog network as well, identifying persons of interest within the aforementioned topics. This can either be people with a lot of influence over certain topics, as was the case in Bi et al \cite{flda}, or identifying potential spammers, which is the direction this paper will be taking. Though there have been other attempts to model topic influencers on a microblog network, FLDA differs from its predecessors in that it takes into account the notion that some users may follow other users for their popularity alone, independent of content. This important distinction helps decrease the influence of other users who are prominent in certain topics, who follow famous users not because they are interested in the topics that they blog about, but simply because they are celebrities \cite{flda}.
+
+To that end, we identify new notation for the extra variables we need to keep track of for FLDA. We now have an $x$ variable that tracks the identity of the topic of someone the given user is following, as well as a $y$ the stores the binary indicator of whether the given user is following someone for their content or not. In addition to the original $\theta$ and $\phi$ topic distributions, we now have $\sigma$, which tracks the topic probability distribution of each follower for the given topic, $\mu$, which tracks the indicator distribution over each user, and finally $\pi$, which stores the probability of a given user being followed for non-content reasons (ie. being famous) \cite{flda}. As before, the new notation introduced here is listed in Table \ref{tab:fldavars} for easy reference.
+
+\begin{table}[h]
+  \centering % used for centering table
+  \begin{tabular}{ |l|l| }
+    \hline
+    Notation & Description \\
+    \hline
+    \hline
+    $x$ & Identity of the topic given the follower \\
+    $y$ & Binary value indicating whether the follower relationship is based on content or not \\
+    $\sigma$ & Probability that a follower is assigned a given topic for this specific user \\
+    $\mu$ & Binary distribution (Bernoulli) over the content indicators \\
+    $\pi$ & Global popularity probability distribution over the links of each user \\
+    \hline
+  \end{tabular}
+  \caption{Quick reference for notation and variables used in FLDA}
+  \label{tab:fldavars}
+\end{table}
+
+The Gibbs sampling equations for FLDA have also been tweaked from the original LDA, as they need to not only incorporate the semantic analysis of the topics in the tweets, but also the topic analysis of the followship network as well. The notation used to represent our matrices in these equations are as follows: $c_{z, m, w}$ is a 3D matrix that represents the number of times word $w$ was assigned to topic $z$ for user $m$, and $d_{x, m, e, y}$ is a 4D matrix that represents the number of times link $e$ was assigned to topic $x$ by user $m$, given the content indicator $y$ (remember that if $y$ is $0$, then user $m$ is following link $e$ for non-content reasons, and if $y$ is $1$, then the link is followed for content reasons).
 \begin{equation}\label{eq:flda_sem}
   \begin{gathered}
     p(z_{m, n} | z_{-(m, n)}, x, w, e, y, \alpha, \beta, \gamma, \epsilon, \rho) \propto \\
@@ -190,6 +223,8 @@ Given that LDA is already a well known model, there are many existing open sourc
 
 To represent the 3D and 4D matrices $c_{z, m, w}$ and $d_{x, m, e, y}$ respectively, multiple 1D and 2D arrays were used. These arrays aggregate the entries in the unrepresented dimension(s), thereby reducing the dimensions of a very large matrix. This greatly increases the speed at which the algorithm can run, though at the obvious cost of requiring more space to store redundant information.
 
+All prior values were set to 0.1, except for $\alpha$, which was set to $50.0 / K$, and $\rho$, which was set to $1$. The former is a standard value to set $\alpha$ to in LDA \cite{lda}, and the latter is the value that was used in the original FLDA runthrough \cite{flda}.
+
 \subsection{Data Sources}
 Twitter was chosen as the microblog in question. While the original Twitter data used is 8 GB large, a much smaller subset weighing in at about 100MB was used to test the algorithm.
 
@@ -198,6 +233,13 @@ I obtained the data from Zijun, which he described as a subset of the
 
 I worked with another student on cleaning the tweets from each individual user. I removed usernames 
 
+
+TODO: remove non-ASCII characters (hopefully most remaining tweets will be in English, or at least Western languages)
+remove words that appear in less than X tweets
+
+% Modifying the sampling distribution for Eqn2 and 3
+\subsubsection{Sampling Equations}
+As the Gibbs LDA source code already included an example of a sampling equation, it was simple to modify the code to account for the extra variables in Equation \ref{eq:flda_sem} \cite{gibbs_lda}. Equations \ref{eq:flda_net_0} and \ref{eq:flda_net_1} required a little more ingenuity. With a little help to interpret the sampling equations in the paper, I created both distributions, then created a cumulative sum of both distribution probabilities for uniform sampling. The size of this cumulative distribution would therefore be twice the size of the total number of topics, $K$. Therefore, if the topic index sampled exceeded $K$, we would subtract $K$ from the value to normalize it (as the topic indices between the two equations refer to the same topics) \cite{flda}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 4: Set Up and Results%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}

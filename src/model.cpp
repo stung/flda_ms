@@ -960,6 +960,7 @@ int model::sampling_flda_eqs23(int m, int l) {
         // Need to adjust for indexing purposes
         topic = topic - K;
         y[m][l] = 1;
+        // printf("Topic was greater than K\n");
     }
     
     // add newly estimated z_i to count variables
