@@ -58,7 +58,7 @@ The paper will be organized as follows. Section \ref{sec:prevwork} will discuss 
 %%%%%%%%%%%%%%%%%%%%%%%% Section 2: Methodology and Previous Work%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Background and Previous Work}
 \label{sec:prevwork}
-\subsection{Background Overview}
+\subsection{Overview}
 To understand how FLDA works, it is necessary to first gain an understanding of how LDA works. As mentioned previously, LDA is a type of probabilistic topic model, which is one approach for semantic analysis. These are models that operate under the following assumptions: that a document is a mixture of different topics, and each topic is a distribution of words. As these are \textit{generative models} for documents, it demonstrates a probabilistic procedure that can be used to generate various documents. Table \ref{tab:ldatopics} shows two example topics, ranked by top 4 words that have a high probability of belonging to that topic. Note that although neither topic is labeled, it is clear to see that Topic 1 most likely has to do with fictional works, whereas Topic 2 revolves around plants and nature. To generate documents from these topics, one simply assigns a probability to each topic and selects words based on the probability distribution of the words in the topics \cite{lda}. In this example, by assigning an equal probability to both topics in this table, one could generate a document that talked about the fictional story of a tree who wanted a bee to come along and pollinate his flowers.
 
 \begin{table}[h]
@@ -88,7 +88,7 @@ Using statistical techniques, it is possible to invert this process and infer th
 \subsection{LDA}
 To start, we first define some variables and equations. $P(z)$ is the probability distribution of topics $z$ over a given document - an example of this would be the equal document we generated previously. There, both topics 1 and 2 had a $50\%$ probability of showing up in the document. $P(w | z)$ is the probability of word $w$ being chosen, given topic $z$. This would be represented by the probabilities listed in Table \ref{tab:ldatopics}. More common or otherwise prominent words for a topic $z$ are given higher weights that the less used ones. A document can therefore be generated, word by word, by first selecting a topic from the distribution of topics, and then sampling a word $w_i$ from the topic-word distribution $P(w | z)$. We represent these two actions with $P(z_i = j)$, which is the probability that for the $i$th word token in a given document, the $j$th topic was selected, and $P(w_i | z_i = j)$, which is the probability of word $w_i$ in topic $j$'s word distribution.
 
-We can simplify the notation using $\phi^{(j)}$ to represent this multinomial distribution of the words for topic $j$, and $\theta^{(d)}$ to represent the multinomial distribution of topics for document $d$. In essence, $\phi$ denotes which words are important for a given topic, and $\theta$ will list out the important topics for a given document. Finally, given that we are inferring these document-topic and topic-word distributions with no prior information about the corpus (ie. the set of documents), we must select a total number of topics $T$ for our inference. The total number of documents in our corpus is $D$, where each document $d$ consists of $N_d$ words, and the total number of words is $N$, where $N = \sum\limits^D{N_d}$ \cite{lda}. Table \ref{tab:ldavars} lists out the aforementioned variables for easy reference.
+We can simplify the notation using $\phi^{(j)}$ to represent this multinomial distribution of the words for topic $j$, and $\theta^{(d)}$ to represent the multinomial distribution of topics for document $d$. In essence, $\phi$ denotes which words are important for a given topic, and $\theta$ will list out the important topics for a given document. Finally, given that we are inferring these document-topic and topic-word distributions with no prior information about the corpus (ie. the set of documents), we must select a total number of topics $T$ for our inference. The total number of documents in the corpus is $D$, where each document $d$ consists of $N_d$ words, and the total number of words is $N$, where $N = \sum\limits^D{N_d}$ \cite{lda}. Table \ref{tab:ldavars} lists out the aforementioned variables for easy reference.
 \begin{table}[h]
   \centering % used for centering table
   \begin{tabular}{ |l|l| }
@@ -186,7 +186,7 @@ To that end, we identify new notation for the extra variables we need to keep tr
   \label{tab:fldavars}
 \end{table}
 
-The Gibbs sampling equations for FLDA have also been tweaked from the original LDA, as they need to not only incorporate the semantic analysis of the topics in the tweets, but also the topic analysis of the followship network as well. The notation used to represent our matrices in these equations are as follows: $c_{z, m, w}$ is a 3D matrix that represents the number of times word $w$ was assigned to topic $z$ for user $m$, and $d_{x, m, e, y}$ is a 4D matrix that represents the number of times link $e$ was assigned to topic $x$ by user $m$, given the content indicator $y$ (remember that if $y$ is $0$, then user $m$ is following link $e$ for non-content reasons, and if $y$ is $1$, then the link is followed for content reasons).
+The Gibbs sampling equations for FLDA have also been tweaked from the original LDA, as they need to not only incorporate the semantic analysis of the topics in the tweets, but also the topic analysis of the followship network as well. The notation used to represent our matrices in these equations are as follows: $c_{z, m, w}$ is a 3D matrix that represents the number of times word $w$ was assigned to topic $z$ for user $m$, and $d_{x, m, e, y}$ is a 4D matrix that represents the number of times link $e$ was assigned to topic $x$ by user $m$, given the content indicator $y$ (remember that if $y$ is $0$, then user $m$ is following link $e$ for non-content reasons, and if $y$ is $1$, then the link is followed for content reasons) \cite{flda}.
 \begin{equation}\label{eq:flda_sem}
   \begin{gathered}
     p(z_{m, n} | z_{-(m, n)}, x, w, e, y, \alpha, \beta, \gamma, \epsilon, \rho) \propto \\
@@ -214,12 +214,31 @@ The Gibbs sampling equations for FLDA have also been tweaked from the original L
   \end{gathered}
 \end{equation}
 
+Here, Equation \ref{eq:flda_sem} creates a distribution for the topic assignment of the given word $z_{m, n}$, where $z$ is the topic-word identity matrix mentioned before, and the indices indicate that this is the assignment for the $n$th word of the $m$th user. Equation \ref{eq:flda_net_0} creates the distribution $x$ for the $l$th followship link of the $m$th user, given that the user is following the link for non-content reasons (ie. $y = 0$). Equation \ref{eq:flda_net_1} thereby creates the $x$ distribution for the same indices, but instead given that the user is following the link for content-dependent reasons (ie. $y = 1$). All of these distributions are then uniformly sampled to produce the count matrices used to estimate the probability distributions, which are shown in Equations \ref{eq:flda_theta} to \ref{eq:flda_pi} for reference purposes. These are the equations used to estimate the distribution parameters, from which we can obtain the words and people of interest under each topic subcategory.
+
+\begin{equation}\label{eq:flda_theta}
+  \theta_{x | m} = \frac{c_{x, m, *} + d_{x, m, *, *} + \alpha_x}{c_{*, m, *} + d_{*, m, *, *} + \sum_{i = 1}^K\alpha_i}
+\end{equation}
+\begin{equation}\label{eq:flda_phi}
+  \phi_{w | z} = \frac{c_{z, *, w} + \beta_w}{c_{z, *, *} + d_{*, m, *, *} + \sum_{i = 1}^W\beta_i}
+\end{equation}
+\begin{equation}\label{eq:flda_mu}
+  \mu_{y | m} = \frac{d_{*, m, *, y} + \rho_y}{d_{*, m, *, *} + \rho_0 + \rho_1}
+\end{equation}
+\begin{equation}\label{eq:flda_sigma}
+  \sigma_{e | x} = \frac{d_{x, *, e, 1} + \gamma_e}{d_{x, *, *, 1} + \sum_{i = 1}^M\gamma_i}
+\end{equation}
+\begin{equation}\label{eq:flda_pi}
+  \pi_{e} = \frac{d_{*, *, e, 0} + \epsilon_e}{d_{*, *, *, 0} + \sum_{i = 1}^M\epsilon_i}
+\end{equation}
+
+The next section will discuss the implementation details of my project.
 
 %%%%%%%%%%%%%%%%%%%%%%%% Section 3: System Design and Approaches%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{System Design and Approaches}
 \label{sec:approach}
 \subsection{System Architecture Overview}
-Given that LDA is already a well known model, there are many existing open source implementations readily available. I chose to use the gibbsLDA \verb!C++! implementation \cite{gibbs_lda}, understand the code, and use that as a baseline from which to extend and model the followship network analysis from. To narrow the scope of my project, I decided to focus only on implementing a working version of the FLDA described in Bi's paper \cite{flda}.
+Given that LDA is already a well known model, there are many existing open source implementations readily available. To narrow the scope of my project, I chose to use the gibbsLDA \verb!C++! implementation \cite{gibbs_lda}, understand the code, and use that as a baseline from which to extend and model the followship network analysis from. This way, I would be able to focus only on implementing a working version of the FLDA described in Bi's paper \cite{flda}.
 
 To represent the 3D and 4D matrices $c_{z, m, w}$ and $d_{x, m, e, y}$ respectively, multiple 1D and 2D arrays were used. These arrays aggregate the entries in the unrepresented dimension(s), thereby reducing the dimensions of a very large matrix. This greatly increases the speed at which the algorithm can run, though at the obvious cost of requiring more space to store redundant information.
 
@@ -229,17 +248,15 @@ All prior values were set to 0.1, except for $\alpha$, which was set to $50.0 / 
 Twitter was chosen as the microblog in question. While the original Twitter data used is 8 GB large, a much smaller subset weighing in at about 100MB was used to test the algorithm.
 
 \subsection{Data Cleaning and Challenges}
-I obtained the data from Zijun, which he described as a subset of the 
-
+I obtained the two Twitter datasets from Zijun. 
 I worked with another student on cleaning the tweets from each individual user. I removed usernames 
-
 
 TODO: remove non-ASCII characters (hopefully most remaining tweets will be in English, or at least Western languages)
 remove words that appear in less than X tweets
 
 % Modifying the sampling distribution for Eqn2 and 3
 \subsubsection{Sampling Equations}
-As the Gibbs LDA source code already included an example of a sampling equation, it was simple to modify the code to account for the extra variables in Equation \ref{eq:flda_sem} \cite{gibbs_lda}. Equations \ref{eq:flda_net_0} and \ref{eq:flda_net_1} required a little more ingenuity. With a little help to interpret the sampling equations in the paper, I created both distributions, then created a cumulative sum of both distribution probabilities for uniform sampling. The size of this cumulative distribution would therefore be twice the size of the total number of topics, $K$. Therefore, if the topic index sampled exceeded $K$, we would subtract $K$ from the value to normalize it (as the topic indices between the two equations refer to the same topics) \cite{flda}.
+As the Gibbs LDA source code already included an example of a sampling equation, it was simple to modify the code to account for the extra variables in Equation \ref{eq:flda_sem} \cite{gibbs_lda}. Equations \ref{eq:flda_net_0} and \ref{eq:flda_net_1} required a little more ingenuity. With a little help from Zijun to interpret the sampling equations in the paper, I created both distributions, then created a cumulative sum of both distribution probabilities for uniform sampling. The size of this cumulative distribution would therefore be twice the size of the total number of topics, $K$. Therefore, if the topic index sampled exceeded $K$, we would subtract $K$ from the value to normalize it (as the topic indices between the two equations refer to the same topics) \cite{flda}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 4: Set Up and Results%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
