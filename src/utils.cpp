@@ -42,6 +42,7 @@ int utils::parse_args(int argc, char ** argv, model * pmodel) {
     int niters = 0;
     int savestep = 0;
     int twords = 0;
+    int tusers = 0;
     int withrawdata = 0;
 
     int i = 0; 
@@ -84,6 +85,9 @@ int utils::parse_args(int argc, char ** argv, model * pmodel) {
 		} else if (arg == "-twords") {
 		    twords = stoi(argv[++i]);
 		    
+		} else if (arg == "-tusers") {
+		    tusers = stoi(argv[++i]);
+
 		} else if (arg == "-withrawdata") {
 		    withrawdata = 1;
 		
@@ -181,6 +185,11 @@ int utils::parse_args(int argc, char ** argv, model * pmodel) {
 		if (twords > 0) {
 		    pmodel->twords = twords;
 		}
+
+		if (tusers > 0) {
+		    pmodel->tusers = tusers;
+		}
+		
 		
 		pmodel->dfile = dfile;
 		pmodel->ffile = ffile;
@@ -314,20 +323,20 @@ void utils::quicksort(vector<pair<int, double> > & vect, int left, int right) {
     pivot = vect[pivotidx];
 
     while (left < right) {
-	while (vect[right].second <= pivot.second && left < right) {
-	    right--;
-	}
-	if (left != right) {
-	    vect[left] = vect[right];
-	    left++;
-	}
-	while (vect[left].second >= pivot.second && left < right) {
-	    left++;
-	}
-	if (left != right) {
-	    vect[right] = vect[left];
-	    right--;
-	}
+		while (vect[right].second <= pivot.second && left < right) {
+		    right--;
+		}
+		if (left != right) {
+		    vect[left] = vect[right];
+		    left++;
+		}
+		while (vect[left].second >= pivot.second && left < right) {
+		    left++;
+		}
+		if (left != right) {
+		    vect[right] = vect[left];
+		    right--;
+		}
     }
 
     vect[left] = pivot;

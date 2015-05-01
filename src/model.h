@@ -64,6 +64,7 @@ public:
     dataset * pnewdata; // pointer to new dataset object
 
     mapid2word id2word; // word map [int => string]
+    mapid2word id2user; // friend map [int => user string]
     
     // --- model parameters and variables ---    
     int M; // dataset size (i.e., number of users/user documents)
@@ -109,6 +110,13 @@ public:
     double ** mu; // mu: , size M x 2
     double ** sigma; // sigma: topic-follower distributions, size K x O
     double * pi; // pi: , size O
+
+    string sigma_suffix;   // suffix for sigma file
+    string pi_suffix;      // suffix for pi file
+    string mu_suffix;      // suffix for mu file
+
+    int tusers; // print out top users per each topic
+    string tusers_suffix;   // suffix for file containing words-per-topics
     
     // --------------------------------------
     
@@ -152,7 +160,6 @@ public:
     int init_est_flda();
     void estimate_flda();
     int sampling_flda_eq1(int m, int n);
-    // pair<int, int> sampling_flda_eq2(int m, int l);
     int sampling_flda_eqs23(int m, int l);
     // int sampling_flda_eq2(int m, int l);
     // int sampling_flda_eq3(int m, int l);
@@ -161,6 +168,12 @@ public:
     void flda_compute_sigma();
     void flda_compute_mu();
     void flda_compute_pi();
+
+    int save_model_sigma(string filename);
+    int save_model_pi(string filename);
+    int save_model_mu(string filename);
+
+    int save_model_tusers(string filename);
 };
 
 #endif

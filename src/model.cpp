@@ -217,8 +217,9 @@ void model::set_default_values() {
     rho1 = 1;
     niters = 2000;
     liter = 0;
-    savestep = 200;    
+    savestep = 25;    
     twords = 0;
+    tusers = 0;
     
     p = NULL;
     q = NULL;
@@ -234,6 +235,7 @@ void model::set_default_values() {
     // FLDA variables
     // model parameters
     L = 0;
+    O = 0;
 
     // sampling variables
     x = NULL; 
@@ -245,6 +247,13 @@ void model::set_default_values() {
     D0sum = 0;
     D1 = NULL;
     D1sum = NULL;
+
+    // suffix names
+    sigma_suffix = ".sigma";
+    pi_suffix = ".pi";
+    mu_suffix = ".mu";
+
+    tusers_suffix = ".tusers";
 }
 
 int model::parse_args(int argc, char ** argv) {
@@ -288,6 +297,26 @@ int model::save_model(string model_name) {
         return 1;
     }
     
+    if (model_status == MODEL_STATUS_EST_FLDA) {
+        if (save_model_sigma(dir + model_name + sigma_suffix)) {
+            return 1;
+        }
+        
+        if (save_model_mu(dir + model_name + mu_suffix)) {
+            return 1;
+        }
+        
+        if (save_model_pi(dir + model_name + pi_suffix)) {
+            return 1;
+        }
+
+        if (tusers > 0) {
+            if (save_model_tusers(dir + model_name + tusers_suffix)) {
+                return 1;
+            }
+        }
+    }
+
     if (twords > 0) {
         if (save_model_twords(dir + model_name + twords_suffix)) {
             return 1;
@@ -357,6 +386,61 @@ int model::save_model_phi(string filename) {
     return 0;
 }
 
+int model::save_model_mu(string filename) {
+    FILE * fout = fopen(filename.c_str(), "w");
+    if (!fout) {
+        printf("Cannot open file %s to save!\n", filename.c_str());
+        return 1;
+    }
+    
+    for (int i = 0; i < M; i++) {
+        for (int j = 0; j < 2; j++) {
+            fprintf(fout, "%f ", mu[i][j]);
+        }
+        fprintf(fout, "\n");
+    }
+    
+    fclose(fout);    
+    
+    return 0;
+}
+
+int model::save_model_sigma(string filename) {
+    FILE * fout = fopen(filename.c_str(), "w");
+    if (!fout) {
+        printf("Cannot open file %s to save!\n", filename.c_str());
+        return 1;
+    }
+    
+    for (int i = 0; i < K; i++) {
+        for (int j = 0; j < O; j++) {
+            fprintf(fout, "%f ", sigma[i][j]);
+        }
+        fprintf(fout, "\n");
+    }
+    
+    fclose(fout);    
+    
+    return 0;
+}
+
+int model::save_model_pi(string filename) {
+    FILE * fout = fopen(filename.c_str(), "w");
+    if (!fout) {
+        printf("Cannot open file %s to save!\n", filename.c_str());
+        return 1;
+    }
+    
+    for (int i = 0; i < O; i++) {
+        fprintf(fout, "%f ", pi[i]);
+        fprintf(fout, "\n");
+    }
+    
+    fclose(fout);    
+    
+    return 0;
+}
+
 int model::save_model_others(string filename) {
     FILE * fout = fopen(filename.c_str(), "w");
     if (!fout) {
@@ -405,6 +489,44 @@ int model::save_model_twords(string filename) {
             it = id2word.find(words_probs[i].first);
             if (it != id2word.end()) {
                 fprintf(fout, "\t%s   %f\n", (it->second).c_str(), words_probs[i].second);
+            }
+        }
+    }
+    
+    fclose(fout);    
+    
+    return 0;    
+}
+
+int model::save_model_tusers(string filename) {
+    FILE * fout = fopen(filename.c_str(), "w");
+    if (!fout) {
+        printf("Cannot open file %s to save!\n", filename.c_str());
+        return 1;
+    }
+    
+    if (tusers > O) {
+        tusers = O;
+    }
+    mapid2word::iterator it;
+    
+    for (int k = 0; k < K; k++) {
+        vector<pair<int, double> > users_probs;
+        pair<int, double> user_prob;
+        for (int o = 0; o < O; o++) {
+            user_prob.first = o;
+            user_prob.second = sigma[k][o];
+            users_probs.push_back(user_prob);
+        }
+        
+        // quick sort to sort user-topic probability
+        utils::quicksort(users_probs, 0, users_probs.size() - 1);
+        
+        fprintf(fout, "Topic %dth:\n", k);
+        for (int i = 0; i < tusers; i++) {
+            it = id2user.find(users_probs[i].first);
+            if (it != id2user.end()) {
+                fprintf(fout, "\t%s   %f\n", (it->second).c_str(), users_probs[i].second);
             }
         }
     }
@@ -799,6 +921,11 @@ void model::estimate_flda() {
         dataset::read_wordmap(dir + wordmapfile, &id2word);
     }
 
+    if (tusers > 0) {
+        // print out top words per topic
+        dataset::read_wordmap(dir + friendmapfile, &id2user);
+    }
+
     printf("Sampling %d iterations!\n", niters);
 
     int last_iter = liter;
@@ -960,7 +1087,6 @@ int model::sampling_flda_eqs23(int m, int l) {
         // Need to adjust for indexing purposes
         topic = topic - K;
         y[m][l] = 1;
-        // printf("Topic was greater than K\n");
     }
     
     // add newly estimated z_i to count variables
@@ -977,7 +1103,6 @@ int model::sampling_flda_eqs23(int m, int l) {
     return topic;
 }
 
-// pair<int, int> model::sampling_flda_eq2(int m, int l) {
 // int model::sampling_flda_eq2(int m, int l) {
 //     // remove x_i and y_i from the count variables
 //     int topic = x[m][l];

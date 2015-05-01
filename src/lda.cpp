@@ -49,7 +49,7 @@ int main(int argc, char ** argv) {
 void show_help() {
     printf("Command line usage:\n");
     printf("\tlda -est -alpha <double> -beta <double> -ntopics <int> -niters <int> -savestep <int> -twords <int> -dfile <string>\n");
-    printf("\tlda -est_flda -alpha <double> -beta <double> -ntopics <int> -niters <int> -savestep <int> -twords <int> -dfile <string> -ffile <string>\n");
+    printf("\tlda -est_flda -alpha <double> -beta <double> -ntopics <int> -niters <int> -savestep <int> -twords <int> -tusers <int> -dfile <string> -ffile <string>\n");
     // printf("\tlda -estc -dir <string> -model <string> -niters <int> -savestep <int> -twords <int>\n");
     // printf("\tlda -inf -dir <string> -model <string> -niters <int> -twords <int> -dfile <string>\n");
     // printf("\tlda -inf -dir <string> -model <string> -niters <int> -twords <int> -dfile <string> -withrawdata\n");
