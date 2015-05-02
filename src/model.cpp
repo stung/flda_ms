@@ -217,7 +217,7 @@ void model::set_default_values() {
     rho1 = 1;
     niters = 2000;
     liter = 0;
-    savestep = 25;    
+    savestep = 100;    
     twords = 0;
     tusers = 0;
     
@@ -335,7 +335,7 @@ int model::save_model_tassign(string filename) {
         return 1;
     }
 
-    // wirte docs with topic assignments for words
+    // write docs with topic assignments for words
     for (i = 0; i < ptrndata->M; i++) {    
         for (j = 0; j < ptrndata->docs[i]->length; j++) {
             fprintf(fout, "%d:%d ", ptrndata->docs[i]->words[j], z[i][j]);
@@ -947,16 +947,6 @@ void model::estimate_flda() {
             for (int l = 0; l < pfrnddata->docs[m]->length; l++) {
                 int topic = sampling_flda_eqs23(m, l);
                 x[m][l] = topic;
-                // if (y[m][l]) {
-                //     // y = 1
-                //     int topic = sampling_flda_eq3(m, l);
-                //     x[m][l] = topic;
-                // } else {
-                //     // y = 0
-                //     int topic = sampling_flda_eq2(m, l);
-                //     x[m][l] = topic;
-                // }
-                // ..how do I change the initial values of y[m][l]?
             }
             // printf("Finished eqns23 for person %d\n", m);
         }
@@ -967,6 +957,9 @@ void model::estimate_flda() {
                 printf("Saving the model at iteration %d ...\n", liter);
                 flda_compute_theta();
                 flda_compute_phi();
+                flda_compute_sigma();
+                flda_compute_pi();
+                flda_compute_mu();
                 save_model(utils::generate_model_name(liter));
             }
         }
@@ -978,6 +971,9 @@ void model::estimate_flda() {
     // printf("Finished theta!\n");
     flda_compute_phi();
     // printf("Finished phi!\n");
+    flda_compute_sigma();
+    flda_compute_pi();
+    flda_compute_mu();
     liter--;
     save_model(utils::generate_model_name(-1));
 }
@@ -998,6 +994,7 @@ int model::sampling_flda_eq1(int m, int n) {
         p[k] = ((nd[m][k] + nl[m][k] + alpha) * (nw[w][k] + beta)) /
                 (nwsum[k] + Vbeta);
                 // ((ndsum[m] + nlsum[m] + K * alpha) * (nwsum[k] + Vbeta));
+        // printf("Current p[k] value is %f\n", p[k]);
     }
 
     // Why do you add these all up? It becomes a cumulative up-to-k array
@@ -1030,22 +1027,26 @@ int model::sampling_flda_eq1(int m, int n) {
 int model::sampling_flda_eqs23(int m, int l) {
     // remove x_i and y_i from the count variables
     int topic = x[m][l];
+    int indicator = y[m][l];
     int e = pfrnddata->docs[m]->words[l];
 
     nl[m][topic] -= 1;
 
-    // Eqn 2
-    C0[m] -= 1;
-    D0[e] -= 1;
-    D0sum -= 1;
+    if (indicator) {
+        // Eqn 3
+        C1[m] -= 1;
+        D1[e][topic] -= 1;
+        D1sum[topic] -= 1;
+    } else {
+        // Eqn 2
+        C0[m] -= 1;
+        D0[e] -= 1;
+        D0sum -= 1;
+    }
     double Mepsilon = M * epsilon;
-
-    // Eqn 3
-    C1[m] -= 1;
-    D1[e][topic] -= 1;
-    D1sum[topic] -= 1;
     double Mgamma = M * gamma;
 
+    // printf("Current D1 and D1sum values are %d, %d\n", D1[e][topic], D1sum[topic]);
     // do multinomial sampling via cumulative method
     for (int k = 0; k < K; k++) {
         // Eqn2
@@ -1057,6 +1058,9 @@ int model::sampling_flda_eqs23(int m, int l) {
         q[k] = ((nd[m][k] + nl[m][k] + alpha) * (C1[m] + rho1) * 
                 (D1[e][k] + gamma)) / (D1sum[k] + Mgamma);
         r[K + k] = q[k];
+
+        // printf("Current q[k] value is %f\n", q[k]);
+        // printf("Current D1 and D1sum values are %d, %d\n", D1[e][k], D1sum[k]);
     }
 
     // Why do you add these all up? It becomes a cumulative up-to-k array
@@ -1082,22 +1086,28 @@ int model::sampling_flda_eqs23(int m, int l) {
     // Else, second half would be Eqn 3 and therefore y = 1
     if (topic < K) {
         y[m][l] = 0;
+
+        // add newly estimated z_i to count variables
+        C0[m] += 1;
+        D0[e] += 1;
+        D0sum += 1;
     } else {
         // If sampled topic is greater than K
         // Need to adjust for indexing purposes
         topic = topic - K;
         y[m][l] = 1;
+
+        // add newly estimated z_i to count variables
+        C1[m] += 1;
+        D1[e][topic] += 1;
+        D1sum[topic] += 1;
     }
     
     // add newly estimated z_i to count variables
     nl[m][topic] += 1;
-    C0[m] += 1;
-    D0[e] += 1;
-    D0sum += 1;
-    
-    C1[m] += 1;
-    D1[e][topic] += 1;
-    D1sum[topic] += 1;
+
+    // printf("New D1 and D1sum values are %d, %d\n", D1[e][topic], D1sum[topic]);
+    // printf("Old D1 and D1sum values are %d, %d\n", D1[e][x[m][l]], D1sum[x[m][l]]);
 
     // Returns topic(index) that broke on the loop above
     return topic;
@@ -1232,8 +1242,10 @@ void model::flda_compute_mu() {
 void model::flda_compute_sigma() {
     for (int k = 0; k < K; k++) {
         for (int o = 0; o < O; o++) {
-            sigma[k][o] = (D1[o][k] + gamma) / 
-                            (D1sum[k] + M * gamma);
+            // printf("D1 current value is %d\n", D1[o][k]);
+            // printf("D1sum current value is %d\n", D1sum[k]);
+            sigma[k][o] = (double)((D1[o][k] + gamma) / 
+                            (D1sum[k] + M * gamma));
         }
     }
 }
