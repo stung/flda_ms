@@ -190,6 +190,7 @@ model::~model() {
 void model::set_default_values() {
     wordmapfile = "wordmap.txt";
     friendmapfile = "friendmap.txt";
+    twitteridmapfile = "all_ids_usernames.txt";
     trainlogfile = "trainlog.txt";
     tassign_suffix = ".tassign";
     theta_suffix = ".theta";
@@ -217,7 +218,7 @@ void model::set_default_values() {
     rho1 = 1;
     niters = 2000;
     liter = 0;
-    savestep = 100;    
+    savestep = 200;    
     twords = 0;
     tusers = 0;
     
@@ -285,30 +286,30 @@ int model::save_model(string model_name) {
         return 1;
     }
     
-    if (save_model_others(dir + model_name + others_suffix)) {
-        return 1;
-    }
+    // if (save_model_others(dir + model_name + others_suffix)) {
+    //     return 1;
+    // }
     
-    if (save_model_theta(dir + model_name + theta_suffix)) {
-        return 1;
-    }
+    // if (save_model_theta(dir + model_name + theta_suffix)) {
+    //     return 1;
+    // }
     
-    if (save_model_phi(dir + model_name + phi_suffix)) {
-        return 1;
-    }
+    // if (save_model_phi(dir + model_name + phi_suffix)) {
+    //     return 1;
+    // }
     
     if (model_status == MODEL_STATUS_EST_FLDA) {
-        if (save_model_sigma(dir + model_name + sigma_suffix)) {
-            return 1;
-        }
+        // if (save_model_sigma(dir + model_name + sigma_suffix)) {
+        //     return 1;
+        // }
         
-        if (save_model_mu(dir + model_name + mu_suffix)) {
-            return 1;
-        }
+        // if (save_model_mu(dir + model_name + mu_suffix)) {
+        //     return 1;
+        // }
         
-        if (save_model_pi(dir + model_name + pi_suffix)) {
-            return 1;
-        }
+        // if (save_model_pi(dir + model_name + pi_suffix)) {
+        //     return 1;
+        // }
 
         if (tusers > 0) {
             if (save_model_tusers(dir + model_name + tusers_suffix)) {
@@ -505,10 +506,12 @@ int model::save_model_tusers(string filename) {
         return 1;
     }
     
+    // This is variable O, not 0
     if (tusers > O) {
         tusers = O;
     }
     mapid2word::iterator it;
+    mapid2word::iterator it2;
     
     for (int k = 0; k < K; k++) {
         vector<pair<int, double> > users_probs;
@@ -526,7 +529,12 @@ int model::save_model_tusers(string filename) {
         for (int i = 0; i < tusers; i++) {
             it = id2user.find(users_probs[i].first);
             if (it != id2user.end()) {
-                fprintf(fout, "\t%s   %f\n", (it->second).c_str(), users_probs[i].second);
+                it2 = twitterid2user.find(atoi((it->second).c_str()));
+                if (it2 != twitterid2user.end()) {
+                    fprintf(fout, "\t%s   %f\n", (it2->second).c_str(), users_probs[i].second);
+                } else {
+                    fprintf(fout, "\t%s   %f\n", (it->second).c_str(), users_probs[i].second);
+                }
             }
         }
     }
@@ -924,6 +932,7 @@ void model::estimate_flda() {
     if (tusers > 0) {
         // print out top words per topic
         dataset::read_wordmap(dir + friendmapfile, &id2user);
+        dataset::read_twitteridmap(dir + twitteridmapfile, &twitterid2user);
     }
 
     printf("Sampling %d iterations!\n", niters);

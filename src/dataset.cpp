@@ -53,8 +53,8 @@ int dataset::read_wordmap(string wordmapfile, mapword2id * pword2id) {
     
     FILE * fin = fopen(wordmapfile.c_str(), "r");
     if (!fin) {
-	printf("Cannot open file %s to read!\n", wordmapfile.c_str());
-	return 1;
+		printf("Cannot open file %s to read!\n", wordmapfile.c_str());
+		return 1;
     }    
     
     char buff[BUFF_SIZE_SHORT];
@@ -64,15 +64,15 @@ int dataset::read_wordmap(string wordmapfile, mapword2id * pword2id) {
     int nwords = atoi(buff);
     
     for (int i = 0; i < nwords; i++) {
-	fgets(buff, BUFF_SIZE_SHORT - 1, fin);
-	line = buff;
-	
-	strtokenizer strtok(line, " \t\r\n");
-	if (strtok.count_tokens() != 2) {
-	    continue;
-	}
-	
-	pword2id->insert(pair<string, int>(strtok.token(0), atoi(strtok.token(1).c_str())));
+		fgets(buff, BUFF_SIZE_SHORT - 1, fin);
+		line = buff;
+		
+		strtokenizer strtok(line, " \t\r\n");
+		if (strtok.count_tokens() != 2) {
+		    continue;
+		}
+		
+		pword2id->insert(pair<string, int>(strtok.token(0), atoi(strtok.token(1).c_str())));
     }
     
     fclose(fin);
@@ -85,8 +85,8 @@ int dataset::read_wordmap(string wordmapfile, mapid2word * pid2word) {
     
     FILE * fin = fopen(wordmapfile.c_str(), "r");
     if (!fin) {
-	printf("Cannot open file %s to read!\n", wordmapfile.c_str());
-	return 1;
+		printf("Cannot open file %s to read!\n", wordmapfile.c_str());
+		return 1;
     }    
     
     char buff[BUFF_SIZE_SHORT];
@@ -96,15 +96,47 @@ int dataset::read_wordmap(string wordmapfile, mapid2word * pid2word) {
     int nwords = atoi(buff);
     
     for (int i = 0; i < nwords; i++) {
-	fgets(buff, BUFF_SIZE_SHORT - 1, fin);
-	line = buff;
+		fgets(buff, BUFF_SIZE_SHORT - 1, fin);
+		line = buff;
+		
+		strtokenizer strtok(line, " \t\r\n");
+		if (strtok.count_tokens() != 2) {
+		    continue;
+		}
 	
-	strtokenizer strtok(line, " \t\r\n");
-	if (strtok.count_tokens() != 2) {
-	    continue;
-	}
+		pid2word->insert(pair<int, string>(atoi(strtok.token(1).c_str()), strtok.token(0)));
+    }
+    
+    fclose(fin);
+    
+    return 0;
+}
+
+int dataset::read_twitteridmap(string wordmapfile, mapid2word * pid2word) {
+    pid2word->clear();
+    
+    FILE * fin = fopen(wordmapfile.c_str(), "r");
+    if (!fin) {
+		printf("Cannot open file %s to read!\n", wordmapfile.c_str());
+		return 1;
+    }    
+    
+    char buff[BUFF_SIZE_SHORT];
+    string line;
+    
+    fgets(buff, BUFF_SIZE_SHORT - 1, fin);
+    int nwords = atoi(buff);
+    
+    for (int i = 0; i < nwords; i++) {
+		fgets(buff, BUFF_SIZE_SHORT - 1, fin);
+		line = buff;
+		
+		strtokenizer strtok(line, " \t\r\n");
+		if (strtok.count_tokens() != 2) {
+		    continue;
+		}
 	
-	pid2word->insert(pair<int, string>(atoi(strtok.token(1).c_str()), strtok.token(0)));
+		pid2word->insert(pair<int, string>(atoi(strtok.token(0).c_str()), strtok.token(1)));
     }
     
     fclose(fin);

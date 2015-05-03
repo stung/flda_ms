@@ -42,7 +42,6 @@ class model {
 public:
     // fixed options
     string wordmapfile;		// file that contains word map [string -> integer id]
-    string friendmapfile;   // file that contains friend map [string -> integer id]
     string trainlogfile;	// training log file
     string tassign_suffix;	// suffix for topic assignment file
     string theta_suffix;	// suffix for theta file
@@ -117,6 +116,9 @@ public:
 
     int tusers; // print out top users per each topic
     string tusers_suffix;   // suffix for file containing words-per-topics
+    string friendmapfile;   // file that contains friend map [string -> integer id]
+    string twitteridmapfile;   // file that contains all Twitter IDs and their mapped usernames/handles [integer id -> string]
+    mapid2word twitterid2user; // friend map [int => user string]
     
     // --------------------------------------
     

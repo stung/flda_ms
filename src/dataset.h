@@ -169,6 +169,7 @@ public:
     static int write_wordmap(string wordmapfile, mapword2id * pword2id);
     static int read_wordmap(string wordmapfile, mapword2id * pword2id);
     static int read_wordmap(string wordmapfile, mapid2word * pid2word);
+    static int read_twitteridmap(string wordmapfile, mapid2word * pid2word);
     
     int read_trndata(string dfile, string wordmapfile);
 	// int read_frnddata(string dfile, string usermapfile);
