@@ -128,23 +128,10 @@ for root, dirs, files in os.walk('.', topdown=False):
 
       tweeters.add(filePath.rpartition(tweetFile)[0])
 
-      # # reads gzipped xml files and extracts tweets
-      # user, tweets = gzParseTweets(filePath)
-      # if user is None:
-      #   user = "N/A"
-      # userIDPair = user + ":" + filePath.split('/')[-2]
-      # users.append(userIDPair)
-      # corpus.append(tweets)
-
     if friendFile in name:
       filePath = os.path.join(root, name)
       
       frienders.add(filePath.rpartition(friendFile)[0])
-
-      # filePath = os.path.join(root, name)
-
-      # followerList = gzParseFollowers(filePath)
-      # followers.append(followerList)
 
 # Extracting the overlap between the two lists
 legitUsers = tweeters & frienders

@@ -163,7 +163,7 @@ public:
     void estimate_flda();
     int sampling_flda_eq1(int m, int n);
     int sampling_flda_eqs23(int m, int l);
-""    void flda_compute_theta();
+    void flda_compute_theta();
     void flda_compute_phi();
     void flda_compute_sigma();
     void flda_compute_mu();
