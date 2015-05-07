@@ -286,30 +286,30 @@ int model::save_model(string model_name) {
         return 1;
     }
     
-    // if (save_model_others(dir + model_name + others_suffix)) {
-    //     return 1;
-    // }
+    if (save_model_others(dir + model_name + others_suffix)) {
+        return 1;
+    }
     
-    // if (save_model_theta(dir + model_name + theta_suffix)) {
-    //     return 1;
-    // }
+    if (save_model_theta(dir + model_name + theta_suffix)) {
+        return 1;
+    }
     
-    // if (save_model_phi(dir + model_name + phi_suffix)) {
-    //     return 1;
-    // }
+    if (save_model_phi(dir + model_name + phi_suffix)) {
+        return 1;
+    }
     
     if (model_status == MODEL_STATUS_EST_FLDA) {
-        // if (save_model_sigma(dir + model_name + sigma_suffix)) {
-        //     return 1;
-        // }
+        if (save_model_sigma(dir + model_name + sigma_suffix)) {
+            return 1;
+        }
         
-        // if (save_model_mu(dir + model_name + mu_suffix)) {
-        //     return 1;
-        // }
+        if (save_model_mu(dir + model_name + mu_suffix)) {
+            return 1;
+        }
         
-        // if (save_model_pi(dir + model_name + pi_suffix)) {
-        //     return 1;
-        // }
+        if (save_model_pi(dir + model_name + pi_suffix)) {
+            return 1;
+        }
 
         if (tusers > 0) {
             if (save_model_tusers(dir + model_name + tusers_suffix)) {

@@ -31,7 +31,6 @@ cachedStopWords = [u'me', u'my', u'myself', u'we', u'our', u'ours',
                    u'same', u'so', u'than', u'too', u'very', u'can',
                    u'will', u'just', u'don', u'should', u'now']
 
-
 try:
   import xml.etree.cElementTree as ET
 except ImportError:
@@ -113,26 +112,59 @@ def cleanTweet(dirtyTweet):
 corpus = []
 users = []
 followers = []
-skipUsers = []
+
+# Need to ensure that each person both tweets and follows people
+tweeters = set()
+frienders = set()
+legitUsers = set()
+
+tweetFile = 'tweets.rss.gz'
+friendFile = 'friends.rss.gz'
 
 for root, dirs, files in os.walk('.', topdown=False):
   for name in files:
-    if 'tweets.rss.gz' in name:
+    if tweetFile in name:
       filePath = os.path.join(root, name)
 
-      # reads gzipped xml files and extracts tweets
-      user, tweets = gzParseTweets(filePath)
-      if user is None:
-        user = "N/A"
-      userIDPair = user + ":" + filePath.split('/')[-2]
-      users.append(userIDPair)
-      corpus.append(tweets)
+      tweeters.add(filePath.rpartition(tweetFile)[0])
 
-    if 'friends.rss.gz' in name:
+      # # reads gzipped xml files and extracts tweets
+      # user, tweets = gzParseTweets(filePath)
+      # if user is None:
+      #   user = "N/A"
+      # userIDPair = user + ":" + filePath.split('/')[-2]
+      # users.append(userIDPair)
+      # corpus.append(tweets)
+
+    if friendFile in name:
       filePath = os.path.join(root, name)
+      
+      frienders.add(filePath.rpartition(friendFile)[0])
 
-      followerList = gzParseFollowers(filePath)
-      followers.append(followerList)
+      # filePath = os.path.join(root, name)
+
+      # followerList = gzParseFollowers(filePath)
+      # followers.append(followerList)
+
+# Extracting the overlap between the two lists
+legitUsers = tweeters & frienders
+
+for userPath in legitUsers:
+  # Process tweets
+  filePath = os.path.join(userPath, tweetFile)
+  # reads gzipped xml files and extracts tweets
+  user, tweets = gzParseTweets(filePath)
+  if user is None:
+    user = "N/A"
+  userIDPair = user + ":" + filePath.split('/')[-2]
+  users.append(userIDPair)
+  corpus.append(tweets)
+
+  # Process friends
+  filePath = os.path.join(userPath, friendFile)
+
+  followerList = gzParseFollowers(filePath)
+  followers.append(followerList)
 
 # Writing the corpus into a file
 corpusFile = open('corpus.txt', 'w')
