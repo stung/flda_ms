@@ -190,7 +190,7 @@ model::~model() {
 void model::set_default_values() {
     wordmapfile = "wordmap.txt";
     friendmapfile = "friendmap.txt";
-    twitteridmapfile = "all_ids_usernames.txt";
+    twitteridmapfile = "userid_username.sort.txt";
     trainlogfile = "trainlog.txt";
     tassign_suffix = ".tassign";
     theta_suffix = ".theta";

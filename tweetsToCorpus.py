@@ -115,7 +115,7 @@ users = []
 followers = []
 skipUsers = []
 
-for root, dirs, files in os.walk('1'):
+for root, dirs, files in os.walk('.', topdown=False):
   for name in files:
     if 'tweets.rss.gz' in name:
       filePath = os.path.join(root, name)
