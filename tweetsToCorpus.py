@@ -4,6 +4,7 @@ import gzip
 import sys
 import re
 import gc
+import random
 
 #import nltk
 #nltk.download('stopwords')
@@ -144,9 +145,16 @@ del tweeters
 del frienders
 gc.collect()
 
+print("Randomly selecting 25 percent of users")
+random.seed()
+fractionOfUsers = []
+for user in legitUsers:
+  if (random.random() < 0.25):
+    fractionOfUsers.append(user)
+
 print("Processing the legit users")
 
-for userPath in legitUsers:
+for userPath in fractionOfUsers:
   # Process tweets
   filePath = os.path.join(userPath, tweetFile)
   # reads gzipped xml files and extracts tweets
@@ -173,6 +181,8 @@ corpusString = '\n'.join(corpus)
 corpusString = corpusString.encode('utf-8').strip()
 corpusFile.write(corpusString)
 corpusFile.close()
+del corpusString
+gc.collect()
 
 print("Writing the users")
 
@@ -181,6 +191,8 @@ usersString = '\n'.join(users)
 with open('users.txt', 'w') as usersFile:
   usersFile.write(usersString)
 usersFile.close()
+del usersString
+gc.collect()
 
 print("Writing the followers")
 
@@ -189,3 +201,5 @@ followerFile = open('followers.txt', 'w')
 followerString = '\n'.join(followers)
 followerFile.write(followerString)
 followerFile.close()
+del followerString
+gc.collect()
