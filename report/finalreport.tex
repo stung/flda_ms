@@ -240,22 +240,38 @@ The next section will discuss the implementation details of my project.
 \subsection{System Architecture Overview}
 Given that LDA is already a well known model, there are many existing open source implementations readily available. To narrow the scope of my project, I chose to use the gibbsLDA \verb!C++! implementation \cite{gibbs_lda}, understand the code, and use that as a baseline from which to extend and model the followship network analysis from. This way, I would be able to focus only on implementing a working version of the FLDA described in Bi's paper \cite{flda}.
 
-To represent the 3D and 4D matrices $c_{z, m, w}$ and $d_{x, m, e, y}$ respectively, multiple 1D and 2D arrays were used. These arrays aggregate the entries in the unrepresented dimension(s), thereby reducing the dimensions of a very large matrix. This greatly increases the speed at which the algorithm can run, though at the obvious cost of requiring more space to store redundant information.
+The gibbsLDA implementation was tested on the Twitter dataset to verify that the LDA algorithm works on a microblog network (more details in section \ref{sec:data} and \ref{sec:challenges}). From there, new functions were added, modeled after the existing LDA counterparts. A new mode was added to the software package, so that the option to run either LDA or FLDA were present. The only new options that were included in the FLDA mode were an option to print out the top $n$th people of interest in a particular topic (be they highly influential people or spammers, depending on the direction of followers), and a follower file that listed out either the people who the given user is following, or people that are following the given user.
 
-All prior values were set to 0.1, except for $\alpha$, which was set to $50.0 / K$, and $\rho$, which was set to $1$. The former is a standard value to set $\alpha$ to in LDA \cite{lda}, and the latter is the value that was used in the original FLDA runthrough \cite{flda}.
+The critical part of the implementation lay in the new sampling equations, as they determined the distributions from which each of the variables would sample. As Equation \ref{eq:flda_sem} was a direct counterpart to Equation \ref{eq:lda_gibbssamp} in regular LDA, the implementation details of Equation \ref{eq:flda_sem} were relatively straightforward. Both equations concerned themselves with semantic content and extracting topic information from a corpus, so this was no surprise. Equations \ref{eq:flda_net_0} and \ref{eq:flda_net_1}, however, ventured into new territory, as they modeled two different variables together. It was therefore necessary to create a single distribution from the two sampling equations, and extract both the content indicator and topic variables from the single distribution. This was accomplished by merging the two distributions generated from the two equations together and obtaining both sampled results from this merged distribution (the details of which are discussed in \ref{sec:samp_eqns}). Depending on what the current content indicator value was, the appropriate count matrices were decremented before the start of each distribution generation, and re-incremented depending on what the newly sampled content indicator value was.
 
-\subsection{Data Sources}
+As the original open source implementation only concerned itself with 2D matrices, it became necessary to find a reasonable way to represent the 3D and 4D matrices shown in the FLDA paper. To accomplish this, multiple 1D and 2D arrays were used to represent the 3D and 4D matrices $c_{z, m, w}$ and $d_{x, m, e, y}$ respectively. These arrays aggregate the entries in the unrepresented dimension(s), thereby reducing the dimensions of a very large matrix. This greatly increases the speed at which the algorithm can run, though at the obvious cost of requiring more space to store redundant information.
+
+All prior values were set to 0.1, except for $\alpha$, which was set to $50.0 / K$, and $\rho$, which was set to $1$. The former is a standard value to set $\alpha$ to in LDA \cite{lda}, and the latter is the value that was used in the original FLDA runthrough \cite{flda}. 
+
+Other pre-processing details to note were remembering to put the total number of lines in the corpus and followers files at the top of file. This tells the \verb!C++! code how much memory to allocate for the main arrays that store all of the corpus and follower information that the FLDA needs.
+
+\subsection{Data Sources}\label{sec:data}
 Twitter was chosen as the microblog in question. While the original Twitter data used is 8 GB large, a much smaller subset weighing in at about 100MB was used to test the algorithm.
 
-\subsection{Data Cleaning and Challenges}
+Describe how LDA and FLDA work on the dataset
+
+\subsection{Challenges}\label{sec:challenges}
+
+\subsubsection{Data Cleaning}
 I obtained the two Twitter datasets from Zijun. 
 I worked with another student on cleaning the tweets from each individual user. I removed usernames 
 
 TODO: remove non-ASCII characters (hopefully most remaining tweets will be in English, or at least Western languages)
 remove words that appear in less than X tweets
 
+Creating Amazon EC2 instance (list out specs)
+
+Can only test followee network on full dataset because sub-datasets have low overlap
+
+ssh broken pipe problems
+
 % Modifying the sampling distribution for Eqn2 and 3
-\subsubsection{Sampling Equations}
+\subsubsection{Sampling Equations}\label{sec:samp_eqns}
 As the Gibbs LDA source code already included an example of a sampling equation, it was simple to modify the code to account for the extra variables in Equation \ref{eq:flda_sem} \cite{gibbs_lda}. Equations \ref{eq:flda_net_0} and \ref{eq:flda_net_1} required a little more ingenuity. With a little help from Zijun to interpret the sampling equations in the paper, I created both distributions, then created a cumulative sum of both distribution probabilities for uniform sampling. The size of this cumulative distribution would therefore be twice the size of the total number of topics, $K$. Therefore, if the topic index sampled exceeded $K$, we would subtract $K$ from the value to normalize it (as the topic indices between the two equations refer to the same topics) \cite{flda}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 4: Set Up and Results%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -977,9 +977,7 @@ void model::estimate_flda() {
     printf("Gibbs sampling completed!\n");
     printf("Saving the final model!\n");
     flda_compute_theta();
-    // printf("Finished theta!\n");
     flda_compute_phi();
-    // printf("Finished phi!\n");
     flda_compute_sigma();
     flda_compute_pi();
     flda_compute_mu();
