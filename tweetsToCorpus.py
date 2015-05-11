@@ -3,6 +3,7 @@ import string
 import gzip
 import sys
 import re
+import gc
 
 #import nltk
 #nltk.download('stopwords')
@@ -121,6 +122,8 @@ legitUsers = set()
 tweetFile = 'tweets.rss.gz'
 friendFile = 'friends.rss.gz'
 
+print("Finding all tweeters and frienders")
+
 for root, dirs, files in os.walk('.', topdown=False):
   for name in files:
     if tweetFile in name:
@@ -135,6 +138,13 @@ for root, dirs, files in os.walk('.', topdown=False):
 
 # Extracting the overlap between the two lists
 legitUsers = tweeters & frienders
+
+print("Deleting the tweeters and frienders")
+del tweeters
+del frienders
+gc.collect()
+
+print("Processing the legit users")
 
 for userPath in legitUsers:
   # Process tweets
@@ -153,6 +163,8 @@ for userPath in legitUsers:
   followerList = gzParseFollowers(filePath)
   followers.append(followerList)
 
+print("Writing the corpus")
+
 # Writing the corpus into a file
 corpusFile = open('corpus.txt', 'w')
 corpusString = '\n'.join(corpus)
@@ -162,11 +174,15 @@ corpusString = corpusString.encode('utf-8').strip()
 corpusFile.write(corpusString)
 corpusFile.close()
 
+print("Writing the users")
+
 # Writing the users into a file
 usersString = '\n'.join(users)
 with open('users.txt', 'w') as usersFile:
   usersFile.write(usersString)
 usersFile.close()
+
+print("Writing the followers")
 
 # Writing the follower list into a file
 followerFile = open('followers.txt', 'w')
