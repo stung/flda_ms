@@ -123,6 +123,7 @@ public:
     ~dataset() {
 		if (docs) {
 		    for (int i = 0; i < M; i++) {
+		    	// cout << i << endl;
 				delete docs[i];
 		    }
 		}

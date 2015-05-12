@@ -190,7 +190,6 @@ int utils::parse_args(int argc, char ** argv, model * pmodel) {
 		    pmodel->tusers = tusers;
 		}
 		
-		
 		pmodel->dfile = dfile;
 		pmodel->ffile = ffile;
 		

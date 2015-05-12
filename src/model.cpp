@@ -205,6 +205,7 @@ void model::set_default_values() {
     model_status = MODEL_STATUS_UNKNOWN;
     
     ptrndata = NULL;
+    pfrnddata = NULL;
     pnewdata = NULL;
     
     M = 0;
@@ -248,6 +249,11 @@ void model::set_default_values() {
     D0sum = 0;
     D1 = NULL;
     D1sum = NULL;
+    nlsum = NULL;
+
+    mu = NULL;
+    sigma = NULL;
+    pi = NULL;
 
     // suffix names
     sigma_suffix = ".sigma";
