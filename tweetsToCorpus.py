@@ -145,11 +145,11 @@ del tweeters
 del frienders
 gc.collect()
 
-print("Randomly selecting 25 percent of users")
+print("Randomly selecting 50 percent of users")
 random.seed()
 fractionOfUsers = []
 for user in legitUsers:
-  if (random.random() < 0.25):
+  if (random.random() < 0.50):
     fractionOfUsers.append(user)
 
 print("Processing the legit users")
