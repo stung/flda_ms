@@ -487,9 +487,12 @@ int model::save_model_twords(string filename) {
             word_prob.second = phi[k][w];
             words_probs.push_back(word_prob);
         }
+
+        // printf("About to sort topic %d\n", k);
         
         // quick sort to sort word-topic probability
-        utils::quicksort(words_probs, 0, words_probs.size() - 1);
+        // utils::quicksort(words_probs, 0, words_probs.size() - 1);
+        sort(words_probs.begin(), words_probs.end(), utils::prob_vector_comp);
         
         fprintf(fout, "Topic %dth:\n", k);
         for (int i = 0; i < twords; i++) {
@@ -527,9 +530,10 @@ int model::save_model_tusers(string filename) {
             user_prob.second = sigma[k][o];
             users_probs.push_back(user_prob);
         }
-        
+
         // quick sort to sort user-topic probability
-        utils::quicksort(users_probs, 0, users_probs.size() - 1);
+        // utils::quicksort(users_probs, 0, users_probs.size() - 1);
+        sort(users_probs.begin(), users_probs.end(), utils::prob_vector_comp);
         
         fprintf(fout, "Topic %dth:\n", k);
         for (int i = 0; i < tusers; i++) {

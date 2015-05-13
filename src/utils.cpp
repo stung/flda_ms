@@ -351,3 +351,6 @@ void utils::quicksort(vector<pair<int, double> > & vect, int left, int right) {
     }    
 }
 
+bool utils::prob_vector_comp(const pair<int, double> & i, const pair<int, double> & j) {
+    return (i.second > j.second);
+}

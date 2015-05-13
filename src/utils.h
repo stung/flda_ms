@@ -25,6 +25,7 @@
 #define _UTILS_H
 
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
@@ -45,6 +46,7 @@ public:
     // sort    
     static void sort(vector<double> & probs, vector<int> & words);
     static void quicksort(vector<pair<int, double> > & vect, int left, int right);
+    static bool prob_vector_comp(const pair<int, double> & i, const pair<int, double> & j);
 };
 
 #endif
