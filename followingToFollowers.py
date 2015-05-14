@@ -47,19 +47,3 @@ followeeFile.write(finalString)
 followeeFile.close()
 userFile.close()
 followerFile.close()
-
-
-# for root, dirs, files in os.walk('1'):
-#   for name in files:
-#     if 'friends.rss.gz' in name:
-#       filePath = os.path.join(root, name)
-
-#       # reads gzipped xml files and extracts followees
-#       followees = gzParse(filePath)
-#       users[dirs] = followees
-
-# # Writing the corpus into a file
-# followeeFile = open('followees.txt', 'w')
-# for key, value in users.iteritems():
-
-# followeeFile.close()

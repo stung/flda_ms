@@ -110,11 +110,6 @@ def cleanTweet(dirtyTweet):
 
   return ' '.join(words)
 
-# Collecting all of the friends and tweets in each run
-corpus = []
-users = []
-followers = []
-
 # Need to ensure that each person both tweets and follows people
 tweeters = set()
 frienders = set()
@@ -145,16 +140,21 @@ del tweeters
 del frienders
 gc.collect()
 
-print("Randomly selecting 50 percent of users")
-random.seed()
-fractionOfUsers = []
-for user in legitUsers:
-  if (random.random() < 0.50):
-    fractionOfUsers.append(user)
+# print("Randomly selecting 50 percent of users")
+# random.seed()
+# fractionOfUsers = []
+# for user in legitUsers:
+#   if (random.random() < 0.50):
+#     fractionOfUsers.append(user)
 
 print("Processing the legit users")
 
-for userPath in fractionOfUsers:
+# Collecting all of the friends and tweets in each run
+corpus = ""
+users = ""
+followers = ""
+
+for userPath in legitUsers:
   # Process tweets
   filePath = os.path.join(userPath, tweetFile)
   # reads gzipped xml files and extracts tweets
@@ -162,44 +162,44 @@ for userPath in fractionOfUsers:
   if user is None:
     user = "N/A"
   userIDPair = user + ":" + filePath.split('/')[-2]
-  users.append(userIDPair)
-  corpus.append(tweets)
+  users += userIDPair + '\n'
+  corpus += tweets + '\n'
 
   # Process friends
   filePath = os.path.join(userPath, friendFile)
 
   followerList = gzParseFollowers(filePath)
-  followers.append(followerList)
+  followers += followerList + '\n'
 
 print("Writing the corpus")
 
 # Writing the corpus into a file
 corpusFile = open('corpus.txt', 'w')
-corpusString = '\n'.join(corpus)
+# corpusString = '\n'.join(corpus)
 
 # Ran into some encoding issues, needed to encode everything into utf-8 before writing
-corpusString = corpusString.encode('utf-8').strip()
-corpusFile.write(corpusString)
+corpus = corpus.encode('utf-8').strip()
+corpusFile.write(corpus)
 corpusFile.close()
-del corpusString
+del corpus
 gc.collect()
 
 print("Writing the users")
 
 # Writing the users into a file
-usersString = '\n'.join(users)
+# usersString = '\n'.join(users)
 with open('users.txt', 'w') as usersFile:
-  usersFile.write(usersString)
+  usersFile.write(users)
 usersFile.close()
-del usersString
+del users
 gc.collect()
 
 print("Writing the followers")
 
 # Writing the follower list into a file
 followerFile = open('followers.txt', 'w')
-followerString = '\n'.join(followers)
-followerFile.write(followerString)
+# followerString = '\n'.join(followers)
+followerFile.write(followers)
 followerFile.close()
-del followerString
+del followers
 gc.collect()
