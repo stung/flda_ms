@@ -251,28 +251,29 @@ All prior values were set to 0.1, except for $\alpha$, which was set to $50.0 / 
 Other pre-processing details to note were remembering to put the total number of lines in the corpus and followers files at the top of file. This tells the \verb!C++! code how much memory to allocate for the main arrays that store all of the corpus and follower information that the FLDA needs.
 
 \subsection{Data Sources}\label{sec:data}
-Twitter was chosen as the microblog in question. While the original Twitter data used is 8 GB large, a much smaller subset weighing in at about 100MB was used to test the algorithm.
+Twitter was chosen as the microblog in question. While the original Twitter data used is 8GB large, a much smaller subset weighing in at about 100MB was used to test the algorithm. Unfortunately, due to the way the smaller dataset was organized, it was impossible to test the reverse follower list data on a slice of the data, as the overlap between the people each user followed and people in the dataset slice was much too small to be meaningful. Therefore, most of the tests were run on the smaller dataset slice as they were in the original paper, which used FLDA to identify prominent influencers in the microblog network \cite{flda}.
 
-Describe how LDA and FLDA work on the dataset
+The LDA implementation ran on the dataset by collecting all of the tweets into a corpus. Each user would be analogous to a document in LDA, and all of the tweets together would constitute the document; the collection of all of the documents would be the corpus of the Twitter dataset. Each user's friends would also be collected and organized in a similar manner, where the people the user is following/follow the user constitute each ``document'', and together they would form the follower ``corpus''. This would be the follower file mentioned previously, which FLDA would process as it would with the tweet corpus.
 
 \subsection{Challenges}\label{sec:challenges}
-
-\subsubsection{Data Cleaning}
-I obtained the two Twitter datasets from Zijun. 
-I worked with another student on cleaning the tweets from each individual user. I removed usernames 
-
-TODO: remove non-ASCII characters (hopefully most remaining tweets will be in English, or at least Western languages)
-remove words that appear in less than X tweets
-
-Creating Amazon EC2 instance (list out specs)
-
-Can only test followee network on full dataset because sub-datasets have low overlap
-
-ssh broken pipe problems
 
 % Modifying the sampling distribution for Eqn2 and 3
 \subsubsection{Sampling Equations}\label{sec:samp_eqns}
 As the Gibbs LDA source code already included an example of a sampling equation, it was simple to modify the code to account for the extra variables in Equation \ref{eq:flda_sem} \cite{gibbs_lda}. Equations \ref{eq:flda_net_0} and \ref{eq:flda_net_1} required a little more ingenuity. With a little help from Zijun to interpret the sampling equations in the paper, I created both distributions, then created a cumulative sum of both distribution probabilities for uniform sampling. The size of this cumulative distribution would therefore be twice the size of the total number of topics, $K$. Therefore, if the topic index sampled exceeded $K$, we would subtract $K$ from the value to normalize it (as the topic indices between the two equations refer to the same topics) \cite{flda}.
+
+\subsubsection{Data Cleaning}
+I obtained the Twitter dataset from Zijun, which also included the small dataset slice through which I did most of my testing. The dataset was cleaned, which included removing common stopwords, usernames, URLs, and words that were only one or two letters long. Non-ASCII characters (ie non-Western languages) were not dealt with; however, most testing through the original LDA implementation on the dataset showed that the sheer volume of English tweets overwhelmed any other foreign language, Western or otherwise.
+
+Some of the folders would only have the tweets or the friends file present. This would result in a mismatch of tweets to users when parsing the corpus and follower files, which would skew the results of users down the line. This problem was circumvented by saving the location of the folders with tweets and the folders with friends, then finding the intersection between the two sets and only processing the intersection. By doing so, we drop the users who have no tweets and the users who follow no friends in exchange for much more reliable data.
+
+To obtain the reverse follower list from the follower file, each user in the follower file goes through their list of followers, then adds themselves to each of their followers's followee list. By doing this systematically for every user, we can create a list of people who are following the current user from the list of people who the current user is following. It is possible that the original dataset did not have any data from people who were following all given users in the dataset. As such, this process still left a lot of gaps in reverse follower file, which is a potential shortcoming to note when analyzing our results.
+
+\subsubsection{Large Dataset}
+While the data cleaning worked well on the small dataset slice, it quickly became evident that my laptop was insufficient to process the sheer volume of data in the large set. As mentioned previously, due to how the dataset was organized, it was not possible to test the reverse follower list on the small dataset, as each user typically followed other users that were outside of the dataset slice. Therefore, I created an Amazon EC2 instance to cope with this shortcoming, using a compute-optimized \verb+c4.4xlarge+ instance with 30GB of RAM. This EC2 instance was chosen after running the data processing script on a \verb+c4.2xlarge+ instance, which has only 15GB of RAM and would actually hit the memory limit, causing the operating system itself to send a kill signal to my process.
+
+Unfortunately, even with 30GB of RAM, I was still running out of memory to process the entire dataset. Though I realized that this was also being caused by memory inefficient code (which was subsequently fixed), I began to worry that the actual FLDA code might also require more memory than my instance possessed to run. On top of that, the paper also suggested that the high end server included almost 200GB of RAM and a 3.2GHz processor, and it would take over an hour to run each iteration \cite{flda}. For those reasons, I decided to select a random subset of the data to run for my project. This would reduce the dataset I desired to use down to a quarter of the original size, making iterations run much faster and the code much less sensitive to memory shortages. Later, after confirming that the EC2 instance had sufficient memory to deal with the quarter dataset, larger sub-datasets were created as well. The only possible shortcoming of using a smaller, random dataset would be potentially removing key users from the dataset. Still, as a proof of concept, the reverse follower mapping would be viable if the users were randomly removed from the larger set, making identification of the spammers possible.
+
+In spite of the precautions taken to cope with the large amount of data, my FLDA algorithm still ran into memory issues when processing the 2GB quarter dataset. After checking a debugger, I was surprised to find that the code was failing on a function that was part of the original gibbsLDA source code. Running my dataset on the original LDA code confirmed that the same memory failure would occur with a 2GB dataset. The original authors of the gibbsLDA code had implemented their own \verb+quicksort+ algorithm to sort a vector of pairs by a value within the pair, rather than rely on the quicksort in the C++ \verb+<algorithm>+ library. While the custom implementation worked for smaller datasets, it clearly had not been tested on anything larger than 1GB of data. A quick spec search confirmed that it was possible to include a custom comparison function with the C++ quicksort, allowing anyone to modify how the C++ quicksort sorted through elements in a given list. After writing my own comparison function for the vector pairs and replacing the quicksort function in gibbsLDA, the code ran smoothly on the 2GB dataset, and I was able to obtain the results I needed for analysis \cite{gibbs_lda}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 4: Set Up and Results%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
@@ -280,6 +281,14 @@ As the Gibbs LDA source code already included an example of a sampling equation,
 \subsection{Preliminary Results}
 As I was extending an existing software package, I needed to ensure that the original program would reliably run LDA on a modified dataset.
 
+\subsection{Quarter Dataset}
+2 hours for dataset processing, 6 hours for 50 iterations and 100 topics
+
+\subsection{Half Dataset}
+5 hours for dataset processing, 20 hours for 100 iterations and 100 topics
+
+\subsection{Full Dataset}
+12 hours for dataset processing, ?? for 100 iterations and 100 topics
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 5: Evaluation and Discussion%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions and Future Work}
