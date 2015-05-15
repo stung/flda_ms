@@ -278,9 +278,6 @@ In spite of the precautions taken to cope with the large amount of data, my FLDA
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 4: Set Up and Results%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 \label{sec:results}
-\subsection{Preliminary Results}
-As I was extending an existing software package, I needed to ensure that the original program would reliably run LDA on a modified dataset.
-
 \subsection{Quarter Dataset}
 2 hours for dataset processing, 6 hours for 50 iterations and 100 topics
 
@@ -288,11 +285,16 @@ As I was extending an existing software package, I needed to ensure that the ori
 5 hours for dataset processing, 20 hours for 100 iterations and 100 topics
 
 \subsection{Full Dataset}
-12 hours for dataset processing, ?? for 100 iterations and 100 topics
+After I had obtained data for both the quarter and half datasets, I decided to try to process the full 8GB dataset on my EC2 instance. Unfortunately, in spite of the half dataset taking only 5 hours to process, my data cleaning Python script took over 20 hours to process the full dataset. I ultimately decided to kill the script before it finished running, because previous experience on the sub-datasets showed that the FLDA algorithm will take even longer to run, and I simply did not have the budget to continue running my code on the \verb+c4.4xlarge+ instance anymore. In spite of this, I believe that my results for the quarter and half datasets are sufficient to show that the reverse follower implementation is a valid use of the FLDA algorithm.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 5: Evaluation and Discussion%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions and Future Work}
 \label{sec:conc}
+My implementation of FLDA not only deepened my understanding of the FLDA process, but also demonstrated the effectiveness of FLDA in identifying spammers in a microblog network. 
+
+The datasets used for the analysis of 
+
+One way to improve the quality of the reverse follower results would be to improve the quality of the reverse follower list to begin with. On Twitter, it is easy to obtain a list of those who are following you. It would be a simple matter to include that information when crawling through the Twitter network, thereby obtaining both a list of followers and reverse followers for each user with ease. This would minimize all of the current gaps present in the reverse follower list, allowing for a richer analysis of the Twitter network.
 
 As described by Bi et al. in \cite{flda}, it is possible to implement FLDA in such a way that allows for parallelization. The implementation done by their group leveraged Spark, a framework that 
 
@@ -304,7 +306,7 @@ As Spark comes with built in Java support, it would have required a different ap
 \subsection{Programming Languages}
 Two programming languages were used in this project:
 \begin{enumerate}
-\item \textbf{Python}: This was used to process the Twitter dataset. The corpus information from the tweets was organized, as well as the friend network information. Extraneous words and words from other languages were also filtered out, to the best of my ability.
+\item \textbf{Python}: This was used to process the Twitter dataset. The corpus information from the tweets was organized, as well as the friend network information. Extraneous words and words from other languages were also filtered out, to the best of my ability. The reverse follower list was also processed from the follower list using Python.
 \item \textbf{C++}: This was used to do all of the algorithmic work for FLDA, such as initialization, sampling, and estimation of the final variables. The Gibbs LDA source code in C++ was used as a starting point for the FLDA functions.
 \end{enumerate}
 
