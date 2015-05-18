@@ -36,7 +36,9 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Abstract%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
-asdf
+While Latent Dirichlet Analysis (LDA) is a well-researched and widespread algorithm today, there are still many places where its applications have not reached their fullest potential. Followship-LDA (FLDA) is a powerful extension of the traditional LDA model, applied to microblog networks such as Twitter. Learning from previous work such as Link-LDA, FLDA is able to not only derive the topical information from tweets expected from LDA, but also distinguish between whether a user is following another user for content dependent or independent reasons.
+
+In this paper, we will cover the basic theory behind LDA and FLDA, then move on to discuss my implementation approach. As I will be using FLDA to identify spammers in a network, the details of how to achieve that will also be mentioned in the implementation. The results of my run will be discussed, as well as any shortcomings in my implementation and the dataset used.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 1: Project Idea%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,7 +51,7 @@ However, there are some advertisers who, instead of taking the time to do their 
 
 This paper will focus on an extension of \textit{Latent Dirichlet Analysis} (LDA). LDA is a probabilistic topic model, and can be applied to a set of documents (known as a \textit{corpus}) to extract topic information for each document and every word in a given corpus. The extension of this model, known as \textit{Followship-LDA} (FLDA), leverages Twitter follower-followee network information to identify either important and influential entities on Twitter, or spambots that most people won't pay attention to and should remove from their followee list. The details of both models will be discussed in Section \ref{sec:prevwork}.
 
-The paper will be organized as follows. Section \ref{sec:prevwork} will discuss any previous work that came before this paper. Most importantly, it details the FLDA method critical to algorithm's success. Section \ref{sec:approach} will discuss the system architecture and design. Section \ref{sec:results} will detail the results of running the FLDA model on the Twitter data subset. Finally, Section \ref{sec:conc} will discuss the conclusions.
+The paper will be organized as follows. Section \ref{sec:prevwork} will discuss any previous work that came before this paper. Most importantly, it details the FLDA method critical to algorithm's success. Section \ref{sec:approach} will discuss the system architecture and design. Section \ref{sec:results} will detail the results of running the FLDA model on the Twitter data subset, and Section \ref{sec:analysis} will cover the analysis of those results. Finally, Section \ref{sec:conc} will discuss the conclusions and any future work.
 
 % \subsection{Motivation}
 % I chose this project to further my understanding of semantic analysis, as well as challenge myself by implementing an algorithm that could efficiently deal with big data.
@@ -164,7 +166,7 @@ As such, we can also estimate our $\phi$ and $\theta$ variables by splitting the
 Once these distributions have been estimated from our sampled $z$, we are able to provide a list of topics, along with the words that have the highest likelihoods of being in each topic, which should all have some relation to one another. This is the basic essence of the semantic analysis method LDA.
 
 \subsection{FLDA}
-FLDA extends this LDA model by incorporating an analysis on the microblog network as well, identifying persons of interest within the aforementioned topics. This can either be people with a lot of influence over certain topics, as was the case in Bi et al \cite{flda}, or identifying potential spammers, which is the direction this paper will be taking. Though there have been other attempts to model topic influencers on a microblog network, FLDA differs from its predecessors in that it takes into account the notion that some users may follow other users for their popularity alone, independent of content. This important distinction helps decrease the influence of other users who are prominent in certain topics, who follow famous users not because they are interested in the topics that they blog about, but simply because they are celebrities \cite{flda}.
+FLDA extends this LDA model by incorporating an analysis on the microblog network as well, identifying persons of interest within the aforementioned topics. This can either be people with a lot of influence over certain topics, as was the case in Bi et al \cite{flda}, or identifying potential spammers, which is the direction this paper will be taking. Though there have been other attempts to model topic influencers on a microblog network, FLDA differs from its predecessors in that it takes into account the notion that some users may follow other users for their popularity alone, independent of content. As an example of such a predecessor, Link-LDA assumes that all links are created for content dependent reasons. For a network such as a scientific journal citation network, this assumption would hold, as one would expect a paper to only cite other papers that were topically related, but for a vast social network such as Twitter, this assumption quickly breaks down. This important distinction helps decrease the influence of other users who are prominent in certain topics, who follow famous users not because they are interested in the topics that they blog about, but simply because they are celebrities \cite{flda}. 
 
 To that end, we identify new notation for the extra variables we need to keep track of for FLDA. We now have an $x$ variable that tracks the identity of the topic of someone the given user is following, as well as a $y$ the stores the binary indicator of whether the given user is following someone for their content or not. In addition to the original $\theta$ and $\phi$ topic distributions, we now have $\sigma$, which tracks the topic probability distribution of each follower for the given topic, $\mu$, which tracks the indicator distribution over each user, and finally $\pi$, which stores the probability of a given user being followed for non-content reasons (ie. being famous) \cite{flda}. As before, the new notation introduced here is listed in Table \ref{tab:fldavars} for easy reference.
 
@@ -278,27 +280,78 @@ In spite of the precautions taken to cope with the large amount of data, my FLDA
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 4: Set Up and Results%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 \label{sec:results}
-\subsection{Quarter Dataset}
-2 hours for dataset processing, 6 hours for 50 iterations and 100 topics
+\subsection{Forward List}\label{sec:forward_flda}
+Before running the dataset on the reverse follower list, I tested my FLDA logic on the full data slice, which amounted to about 100MB of data. This dataset was small enough to run smoothly and quickly on my own machine, finishing 100 iterations on 100 topics within 20 minutes. Shown below is a sample of my run:
 
-\subsection{Half Dataset}
-5 hours for dataset processing, 20 hours for 100 iterations and 100 topics
+\begin{table}[h]
+  \centering % used for centering table
+  \begin{tabular}{ |l|l|l| }
+    \hline
+    Topic & Top Ten Keywords & Top Ten Influencers \\
+    \hline
+    \hline
+    News and Politics & news, obama, says, health, bill, care, president, book2book, america, bbc & aplusk, oprah, wefollow, iamdiddy, ryanseacrest, whitehouse, cnnbrk, jeremypiven, algore, sarabareilles \\
+    Music & new, music, club, single, track, download, album, crazy, chris, song & feliciaday, mchammer, ladygaga, petewentz, greggrunberg, britneyspears, theellenshow, cnnbrk, nfl, themandymoore \\
+    Sports & game, win, team, football, season, play, tonight, bowl, lakers, nba & the\_real\_nash, chrisbosh, baron\_davis, mcuban, kevindurant35, dwadeofficial, ogochocinco, reallamarodom, thejetontnt, lfitzgerald11 \\
+    Tech & google, iphone, apple, app, use, web, search, mobile, email, ipad & jimmyfallon, britneyspears, natalidelconte, kevinrose, jason, twitter\_tips, smashingmag, calilewis, scobleizer, levarburton \\
+    People with short attention spans & love, haha, omg, dont, cant, miss, hahaha, wanna, school, wait & mitchelmusso, tracecyrus, justinbieber, barackobama, selenagomez, david\_henrie, emilyosment, jonasbrothers, shanedawson, mariahcarey \\
+    \hline
+  \end{tabular}
+  \caption{A sample of the FLDA run on the dataset slice when looking for influencers}
+  \label{tab:flda_test}
+\end{table}
+
+\subsection{Quarter Dataset}\label{sec:quarter}
+The quarter dataset was randomly created from the main 8GB dataset. It took 2 hours for dataset processing and 6 hours to run the FLDA algorithm for 50 iterations on 100 topics. A total of 273054 users were randomly selected. As the half dataset in Section \ref{sec:half} is a larger random sub-dataset of the full dataset (as compared to the quarter dataset in this section), I opted to only show results from the half dataset run instead.
+
+\subsection{Half Dataset}\label{sec:half}
+The half dataset was randomly created from the main 8GB dataset. It took 5 hours for dataset processing and 20 hours to run the FLDA algorithm for 100 iterations on 100 topics. A total of 546603 users were randomly selected. Shown below is a sample of my run:
+
+\begin{table}[h]
+  \centering % used for centering table
+  \begin{tabular}{ |l|l|l| }
+    \hline
+    Topic & Top Ten Keywords & Top Ten Spammers \\
+    \hline
+    \hline
+    Tech & iphone, google, apple, app, ipad, mac, windows, mobile, wave, apps & sarahrobinson, britneyspears, the\_gman, nansen, foodimentary, scotmckay, thinkreferrals, michaelmillman, treypennington, thedigitallife \\
+    Web Marketing & social, business, media, marketing, web, internet, google, online, tips, search & sarahrobinson, scotmckay, guykawasaki, britneyspears, tom\_siwik, michaelmillman, brentnhunter, mariashriver, techxav, coolsi \\
+    Stuff Kids Like & vote, voted, best, taylor, justin, jonas, miley, nick, moon, joe, twilight & sarahrobinson, britneyspears, dsmpublishing, yokoono, scotmckay, twitter\_tips, ann\_sieg, thinkreferrals, mariashriver, brentnhunter \\
+    Gym Rats & run, body, fat, health, gym, weight, ran, workout, healthy, lose & sarahrobinson, ronniewilson, guykawasaki, britneyspears, ohhdlinfo, scotmckay, yokoono, michaelmillman, techxav, markclayson \\
+    Family & great, kids, coffee, food, looking, holiday, enjoy, lots, forward, ideas, parents, thanksgiving & sarahrobinson, wholefoods, scotmckay, foodimentary, clatko, thedigitallife, peta, britneyspears, nansen, espn \\
+    Food & chocolate, food, chicken, cheese, tea, ice, cream, eating, cake, eat, coffee & sarahrobinson, wholefoods, yokoono, britneyspears, coffeetweet, scotmckay, markclayson, thinkreferrals, andrew303, michaelmillman \\
+    Englishmen & london, bit, lovely, xxx, brilliant, xmas, bloody, mate, mum, bbc & sarahrobinson, scotmckay, clatko, bearfanron, wholefoods, brat13, ludwikc, stephenkruiser, tom\_siwik, michaelmillman \\
+    Obviously Spam & free, money, white, online, make, learn, pay, teeth, mom, secret, turn, trick & sarahrobinson, thinkreferrals, michaelmillman, britneyspears, wholefoods, markclayson, guykawasaki, hashtags, scotmckay, stephenkruiser \\
+    \hline
+  \end{tabular}
+  \caption{A sample of the FLDA run on the half dataset when looking for spammers}
+  \label{tab:flda_half}
+\end{table}
 
 \subsection{Full Dataset}
-After I had obtained data for both the quarter and half datasets, I decided to try to process the full 8GB dataset on my EC2 instance. Unfortunately, in spite of the half dataset taking only 5 hours to process, my data cleaning Python script took over 20 hours to process the full dataset. I ultimately decided to kill the script before it finished running, because previous experience on the sub-datasets showed that the FLDA algorithm will take even longer to run, and I simply did not have the budget to continue running my code on the \verb+c4.4xlarge+ instance anymore. In spite of this, I believe that my results for the quarter and half datasets are sufficient to show that the reverse follower implementation is a valid use of the FLDA algorithm.
+After I had obtained data for both the quarter and half datasets, I decided to try to process the full 8GB dataset on my EC2 instance. Unfortunately, in spite of the half dataset taking only 5 hours to process, my data cleaning Python script took over 20 hours to process the full dataset. I ultimately decided to kill the script before it finished running, because previous experience on the sub-datasets showed that the FLDA algorithm will take even longer to run, and I simply did not have the budget to continue running my code on the \verb+c4.4xlarge+ instance anymore. In spite of this, I believe that my results for the quarter and half datasets are sufficient to show that the reverse follower implementation is a valid use of the FLDA algorithm in identifying spammers.
+
+\section{Analysis}
+\label{sec:analysis}
+\subsection{Preliminary Results}
+As Table \ref{tab:flda_test} shows, while some topics and their influencers have a clear link, such as in Sports, others do not show as obvious a link (it is not entirely convincing that Barack Obama is a strong influencer on young students compared to Justin Bieber or the Jonas brothers). I suspect my implementation of FLDA is incomplete; in spite of taking the content indicator into account in my logic, it would appear that my implementation assumes all links are created with content dependent reasons. Either that, or I am not properly accounting for the content indicator variable. Nonetheless, with time running short, I decided to proceed with my implementation on the main dataset and reverse the follower list to search for spammers.
+% It is entirely possible that I did not implement the logic of the content indicator correctly, as the results suggest that the code seems to process the data 
+
+\subsection{Half Dataset Results}
+% Finding relevant usernames in sea of garbage
+My half dataset results in Table \ref{tab:flda_half} were similarly discouraging, though I would occasionally find a relevant username in the topic spammers (\verb+thedigitallife+ in Tech, \verb+coffeetweet+ in Food)
+
+FLDA worked by identifying influential individuals in a network when given the list of users each given user follows; if an individual's user ID was listed many times by multiple users, then this indicated that this user is an influential individual. Conversely, when given a list of users that follow the given user, the reverse would be true; if a user's ID was listed many times by multiple users, then this indicated that this user follows a great deal of people and may be fishing for more followers themselves. However, as I was forming my reverse follower list from the existing list of followers, my reverse follower list was very sparse; many users in my list were listed as not being followed by anyone at all. In addition, many of my topics listed the same spammers over several topics. The user \verb+sarahrobinson+, for instance, was listed by XXXX users, with YYYY listing her as the only person who followed them. I suspect this is not the case in actuality, but by doing so my dataset was skewed to the point where all of my topics listed her as the top spammer, often by a whole order of magnitude in probability. By actually crawling for this information, I suspect the number of gaps in my reverse follower list would be much smaller and could perform a more reasonable analysis on the dataset.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 5: Evaluation and Discussion%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions and Future Work}
 \label{sec:conc}
-My implementation of FLDA not only deepened my understanding of the FLDA process, but also demonstrated the effectiveness of FLDA in identifying spammers in a microblog network. 
+My implementation of FLDA not only deepened my understanding of the FLDA process, but also demonstrated the effectiveness of FLDA in identifying spammers in a microblog network. Although there may be some gaps in my logic and the quality of data used, the results are encouraging, and I would strongly recommend further exploration in this area.
+% The datasets used for the analysis of 
 
-The datasets used for the analysis of 
+One way to improve the quality of the reverse follower results would be to improve the quality of the reverse follower list to begin with. On Twitter, it is easy to obtain a list of those who are following you. It would be a simple matter to include that information when crawling through the Twitter network, thereby obtaining both a list of followers and reverse followers for each user with ease. This would minimize all of the current gaps present in the reverse follower list, allowing for a richer and more accurate analysis of the Twitter network.
 
-One way to improve the quality of the reverse follower results would be to improve the quality of the reverse follower list to begin with. On Twitter, it is easy to obtain a list of those who are following you. It would be a simple matter to include that information when crawling through the Twitter network, thereby obtaining both a list of followers and reverse followers for each user with ease. This would minimize all of the current gaps present in the reverse follower list, allowing for a richer analysis of the Twitter network.
-
-As described by Bi et al. in \cite{flda}, it is possible to implement FLDA in such a way that allows for parallelization. The implementation done by their group leveraged Spark, a framework that 
-
-As Spark comes with built in Java support, it would have required a different approach to 
+Another big area of improvement would be in the scalability of this code. My experience with the quarter and half datasets quickly showed how the runtime of both the dataset processing and algorithm did not scale linearly with size. As described by Bi et al., it is possible to implement FLDA in such a way that allows for parallelization. The implementation done by their group leveraged Spark, a framework that lets developers easily set up a distributed solution to their problem. This would greatly increase the scalability of the process \cite{flda}. Though their FLDA implementation was done in Java to take advantage of Spark's built in Java support, I believe there is some merit to running this code using \verb0C++0, a language that is traditionally faster than Java. Parallelizing the \verb0C++0 FLDA implementation and comparing it against the Java implementation would be a logical next step for this project.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Section 6: Teamwork%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Miscellaneous}
